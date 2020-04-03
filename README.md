@@ -1,5 +1,7 @@
 # Coper (Coroutines permissions) 
 
+[![Build Status](https://travis-ci.com/vinted/coper.svg?token=jJbXr9K9ZKMgFDkycBtv&branch=master)](https://travis-ci.com/vinted/coper)
+
 Library, which lets you to request android runtime permissions using coroutines. 
 This library will create separate fragment in fragment manager and handle all permission request there.
 Fragment lifecycle is covered by this library, so you should not worry about request cancellation.
