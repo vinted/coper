@@ -5,22 +5,16 @@
 Library, which lets you to request android runtime permissions using coroutines. 
 This library will create separate fragment in fragment manager and handle all permission request there.
 Fragment lifecycle is covered by this library, so you should not worry about request cancellation.
-It will only need Activity to create instance, which should be instance of FragmentActivity.
 It is designed to use in any place like ViewModel as in fragment or activity.
 
 ### Api
 ```
 val coper: Coper = CoperBuilder()
-    .withActivity(activity) // activity must be instanceOf FragmentActivity
-    .build()
-```
-```
-val coper: Coper = CoperBuilder()
-    .withFragment(fragment)
+    .setFragmentManager(fragmentManager)
     .build()
 ```
 ###### Note:
-You must provide either fragment or either activity.
+You must provide fragment manager to build coper.
 ##### Request example:
 ```
 launch {
