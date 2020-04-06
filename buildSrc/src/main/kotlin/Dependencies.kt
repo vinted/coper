@@ -8,6 +8,7 @@ object Versions {
     const val MOCKITO = "3.1.0"
     const val MOCKITO_KOTILN = "1.5.0"
     const val CORE_KTX = "1.2.0"
+    const val FRAGMENT_KTX = "1.2.4"
 
     const val COMPILE_SDK_VERSION = 29
     const val MIN_SDK_VERSION = 21
@@ -28,4 +29,5 @@ object Libs {
     const val MOCKITO_KOTLIN = "com.nhaarman:mockito-kotlin:${Versions.MOCKITO_KOTILN}"
     const val CORE_KTX = "androidx.core:core-ktx:${Versions.CORE_KTX}"
     const val KOTLIN_TESTS = "org.jetbrains.kotlin:kotlin-test:${Versions.KOTLIN}"
+    const val FRAGMENT_KTX = "androidx.fragment:fragment-ktx:${Versions.FRAGMENT_KTX}"
 }
