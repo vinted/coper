@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
     fun addFragmentToActivity(fragment: Fragment) {
         supportFragmentManager.commit(allowStateLoss = true) {
             addToBackStack(null)
-            add(android.R.id.content, fragment)
+            replace(android.R.id.content, fragment)
         }
     }
 }

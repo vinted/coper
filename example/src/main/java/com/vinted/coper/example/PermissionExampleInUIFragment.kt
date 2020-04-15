@@ -73,7 +73,7 @@ class PermissionExampleInUIFragment : Fragment() {
     private fun onPermissionResult(permissionResult: PermissionResult) {
         when (permissionResult) {
             is PermissionResult.Granted -> {
-                showToast("${permissionResult.grantedPermissions.size} permissions granted")
+                showToast("${permissionResult.grantedPermissions} permissions granted")
             }
             is PermissionResult.Denied -> {
                 handleDeniedPermission(permissionResult)
@@ -82,16 +82,10 @@ class PermissionExampleInUIFragment : Fragment() {
     }
 
     private fun handleDeniedPermission(permissionResult: PermissionResult.Denied) {
-        when (permissionResult) {
-            is PermissionResult.Denied.JustDenied -> {
-                showToast("${permissionResult.deniedPermission} permission just denied")
-            }
-            is PermissionResult.Denied.NeedsRationale -> {
-                showToast("${permissionResult.deniedPermission} permission denied and needs rationale")
-            }
-            is PermissionResult.Denied.DeniedPermanently -> {
-                showToast("${permissionResult.deniedPermission} permission denied permanently")
-            }
+        if (permissionResult.isRationale()) {
+            showToast("${permissionResult.getDeniedRationale()} permission denied and needs rationale")
+        } else {
+            showToast("${permissionResult.getDeniedPermanently()} permission denied permanently")
         }
     }
 

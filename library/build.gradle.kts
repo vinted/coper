@@ -25,8 +25,10 @@ android {
 dependencies {
     api(Libs.APP_COMPAT)
     api(Libs.KOTLIN_COROUTINES)
+    testImplementation(Libs.MOCKITO_KOTLIN)
     testImplementation(Libs.KOTLIN_TESTS)
     testImplementation(Libs.JUNIT)
     testImplementation(Libs.MOCKITO)
     testImplementation(Libs.ROBOLECTRIC)
+    testImplementation(Libs.MOCKITO_INLINE)
 }

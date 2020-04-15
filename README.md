@@ -15,29 +15,14 @@ val coper: Coper = CoperBuilder()
 ```
 ###### Note:
 You must provide fragment manager to build coper.
-##### Request example:
+### Usage
+##### Request:
 ```
 launch {
     val permissionResult: PermissionResult = coper.request(Manifest.permission.CAMERA)
 }
 ```
-### Result 
-```
-sealed class PermissionResult {
-    /*
-    * If all permission were granted it is stated, that request was succesfull
-    */
-    fun isSuccessful(): Boolean
-    data class Granted(val grantedPermissions: Collection<String>) : PermissionResult()
-    sealed class Denied(val deniedPermission: String) : PermissionResult() {
-        data class JustDenied(deniedPermission: String) : Denied(deniedPermission)
-        data class NeedsRationale(deniedPermission: String) : Denied(deniedPermission)
-        data class DeniedPermanently(deniedPermission: String) : Denied(deniedPermission)
-    }
-}
-```
-### Usage
-##### Result:
+##### Example:
 ```
 launch {
     val permissionResult = coper.request(Manifest.permission.CAMERA)
@@ -50,21 +35,25 @@ launch {
 ```
 ##### Support for multiple permissions request:
 ```
-launch {
-    val permissionResult = coper.request(
-            Manifest.permission.CAMERA,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-    if (permissionResult.isSuccesfull()) {
-        launchCamera()
+val permissionResult = coper.request(
+        Manifest.permission.CAMERA,
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    )
+
+```
+###### Note:
+If any of the requests fail, then request returns `PermissionsResult.Denied` with all denied permissions and its deny value (denied rationale or denied permanently). 
+E.g. you request 3 permissions (`CAMERA`, `READ_EXTERNAL_STORAGE` and `BLUETOOTH`), in case `CAMERA` is successful, `READ_EXTERNAL_STORAGE` is failure, response will be failure for `READ_EXTERNAL_STORAGE`.
+##### Error handling:
+```
+if(permissionResult is Denied) {
+    if(permissionResult.isRationale()) {
+        showRationale(permissionResult.getDeniedRationale())
     } else {
-        showError(permissionResult)
+        showPermanent(permissionResult.getDeniedPermanently())
     }
 }
 ```
-###### Note:
-If any of the requests fail, on the first failure, permission response emits failed item and request is over. 
-E.g. you request 3 permissions (`CAMERA`, `READ_EXTERNAL_STORAGE` and `BLUETOOTH`), in case `CAMERA` is successful, `READ_EXTERNAL_STORAGE` is failure, response will be failure for `READ_EXTERNAL_STORAGE`.
 ##### If you have some optional permissions:
 ```
 launch {
