@@ -22,6 +22,31 @@ android {
     }
 }
 
+tasks {
+    val main = android.sourceSets["main"]
+    val sourcesJar by creating(Jar::class) {
+        archiveClassifier.set("sources")
+        from(main.java.srcDirs)
+    }
+
+    val javaDoc by creating(Javadoc::class) {
+        isFailOnError = false
+        source = main.java.sourceFiles
+        classpath += project.files(android.bootClasspath.joinToString(File.pathSeparator))
+    }
+
+    val javaDocJar by creating(Jar::class) {
+        dependsOn.add(javaDoc)
+        archiveClassifier.set("javadoc")
+        from(javaDoc.destinationDir)
+    }
+
+    artifacts {
+        archives(sourcesJar)
+        archives(javaDocJar)
+    }
+}
+
 dependencies {
     api(Libs.APP_COMPAT)
     api(Libs.KOTLIN_COROUTINES)
