@@ -19,6 +19,11 @@ android {
         getByName("release") {
             isMinifyEnabled = false
         }
+
+        kotlinOptions {
+            freeCompilerArgs = listOf("-Xopt-in=kotlin.contracts.ExperimentalContracts")
+
+        }
     }
 }
 

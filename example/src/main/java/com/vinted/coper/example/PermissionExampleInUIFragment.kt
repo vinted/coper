@@ -53,11 +53,14 @@ class PermissionExampleInUIFragment : Fragment() {
 
     private fun onTwoPermissionsClickedWithOneRequest() {
         GlobalScope.launch(Dispatchers.Main) {
-            val result = coper.request(
+            coper.request(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.CAMERA
-            )
-            onPermissionResult(result)
+            ).onGranted { grantedResult ->
+                handleGrantedPermission(grantedResult)
+            }.onDenied { deniedResult ->
+                handleDeniedPermission(deniedResult)
+            }
         }
     }
 
@@ -79,6 +82,10 @@ class PermissionExampleInUIFragment : Fragment() {
                 handleDeniedPermission(permissionResult)
             }
         }
+    }
+
+    private fun handleGrantedPermission(permissionResult: PermissionResult.Granted) {
+        showToast("${permissionResult.grantedPermissions} permissions granted")
     }
 
     private fun handleDeniedPermission(permissionResult: PermissionResult.Denied) {

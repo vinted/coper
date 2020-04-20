@@ -1,18 +1,54 @@
 package com.vinted.coper
 
+import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.Fragment
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 internal class CoperFragment : Fragment() {
 
-    private var requestDeferred: CompletableDeferred<List<PermissionCheckResult>>? = null
+    private val mutex = Mutex()
+
+    // If job is not completed, then it is cancelled, when changed
+    private var permissionRequestState: PermissionRequestState? = null
+        set(value) {
+            if (field?.deferred?.isCompleted == false) {
+                val message =
+                    "Request with: ${value?.permissions?.joinToString(", ")} created while other request with: ${field?.permissions?.joinToString(
+                        ", "
+                    )} were running"
+                field?.deferred?.cancel(
+                    PermissionRequestCancelException(message)
+                )
+            }
+            field = value
+        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        retainInstance = true
+    }
+
+    // This request makes sure that permissions will be handled after getting back from background
+    override fun onResume() {
+        super.onResume()
+        val permissionRequest = permissionRequestState ?: return
+        if (mutex.isLocked && !permissionRequest.deferred.isCompleted) {
+            requestPermissions(permissionRequest.permissions.toTypedArray(), REQUEST_CODE)
+        }
+    }
 
     internal suspend fun requestPermission(permissions: Array<out String>): PermissionResult {
-        val checkPermissionResults = checkPermissions(permissions)
-        return getPermissionResult(checkPermissionResults)
+        return mutex.withLock {
+            val checkPermissionResults = checkPermissions(permissions)
+            val result = getPermissionResult(checkPermissionResults)
+            permissionRequestState = null
+            result
+        }
     }
 
     private fun checkPermissions(permissions: Array<out String>): List<PermissionCheckResult> {
@@ -32,21 +68,20 @@ internal class CoperFragment : Fragment() {
 
     private suspend fun getPermissionResult(
         permissionChecks: List<PermissionCheckResult>,
-        granted: List<String> = emptyList(),
+        grantedPermissions: List<String> = emptyList(),
         isSecondTime: Boolean = false
     ): PermissionResult {
-        val grantedPermissions = permissionChecks.filterGrantedPermissions()
-        val deniedPermissions = permissionChecks.filterDeniedPermissions()
-        return if (deniedPermissions.isEmpty()) {
-            PermissionResult.Granted(granted + grantedPermissions.toList())
+        val granted = permissionChecks.filterGrantedPermissions()
+        val denied = permissionChecks.filterDeniedPermissions()
+        return if (denied.isEmpty()) {
+            PermissionResult.Granted(grantedPermissions + granted)
         } else {
             if (isSecondTime) {
-                getDeniedPermissionResult(deniedPermissions)
+                getDeniedPermissionResult(denied)
             } else {
-                val result = requestPermissionAsync(deniedPermissions.toTypedArray()).await()
                 getPermissionResult(
-                    permissionChecks = result,
-                    granted = grantedPermissions,
+                    permissionChecks = requestPermissionAsync(denied.toTypedArray()).await(),
+                    grantedPermissions = granted,
                     isSecondTime = true
                 )
             }
@@ -70,7 +105,10 @@ internal class CoperFragment : Fragment() {
         permissions: Array<out String>
     ): Deferred<List<PermissionCheckResult>> {
         val requestDeferred = CompletableDeferred<List<PermissionCheckResult>>()
-        this.requestDeferred = requestDeferred
+        this.permissionRequestState = PermissionRequestState(
+            permissions = permissions.toList(),
+            deferred = requestDeferred
+        )
         requestPermissions(permissions, REQUEST_CODE)
         return requestDeferred
     }
@@ -82,30 +120,34 @@ internal class CoperFragment : Fragment() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != REQUEST_CODE) return
+        if (permissions.isEmpty() && grantResults.isEmpty()) return
         onRequestPermissionResult(permissions.toList(), grantResults.toList())
     }
 
     internal fun onRequestPermissionResult(
-        permission: List<String>,
-        permissionResult: List<Int>
+        permissions: List<String>,
+        permissionsResult: List<Int>
     ) {
-        val requestDeferred = requestDeferred ?: return
-        if (permissionResult.isEmpty() ||
-            permission.isEmpty() ||
-            permissionResult.size != permission.size
-        ) {
-            requestDeferred.completeExceptionally(
-                IllegalStateException("One of result is empty: permission: $permission, permissionResult: $permissionResult")
+        val permissionRequestState = permissionRequestState ?: return
+        if (permissionRequestState.permissions.toSet() != permissions.toSet()) return
+        if (permissionsResult.size != permissions.size) {
+            permissionRequestState.deferred.completeExceptionally(
+                PermissionRequestCancelException("Permissions ${permissions.size} is not same size as permissionResult: ${permissionsResult.size}")
             )
             return
         }
-        val checkPermissionResult = permissionResult.mapIndexed { index, result ->
+        val checkPermissionResult = permissionsResult.mapIndexed { index, result ->
             PermissionCheckResult.of(
                 permissionResult = result,
-                permission = permission[index]
+                permission = permissions[index]
             )
         }
-        requestDeferred.complete(checkPermissionResult)
+        permissionRequestState.deferred.complete(checkPermissionResult)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        permissionRequestState = null
     }
 
     private fun List<PermissionCheckResult>.filterGrantedPermissions(): List<String> {
@@ -133,6 +175,11 @@ internal class CoperFragment : Fragment() {
             }
         }
     }
+
+    private data class PermissionRequestState(
+        val permissions: List<String>,
+        val deferred: CompletableDeferred<List<PermissionCheckResult>>
+    )
 
     companion object {
         private const val REQUEST_CODE = 11111

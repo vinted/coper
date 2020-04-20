@@ -22,6 +22,8 @@ launch {
     val permissionResult: PermissionResult = coper.request(Manifest.permission.CAMERA)
 }
 ```
+###### Note:
+Calling permission on a background thread or request with 0 permissions will throw `IllegalStateException`
 ##### Example:
 ```
 launch {
@@ -36,17 +38,25 @@ launch {
 ##### Support for multiple permissions request:
 ```
 val permissionResult = coper.request(
-        Manifest.permission.CAMERA,
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    )
-
+        Manifest.permission.CAMERA, // granted
+        Manifest.permission.READ_EXTERNAL_STORAGE, // granted
+        Manifest.permission.BLUETOOTH //granted
+)
+permissionResult.isGranted() // returns true
+```
+```
+val permissionResult = coper.request(
+        Manifest.permission.CAMERA, // granted
+        Manifest.permission.READ_EXTERNAL_STORAGE, // denied
+        Manifest.permission.BLUETOOTH //granted
+)
+permissionResult.isGranted() // returns false
 ```
 ###### Note:
 If any of the requests fail, then request returns `PermissionsResult.Denied` with all denied permissions and its deny value (denied rationale or denied permanently). 
-E.g. you request 3 permissions (`CAMERA`, `READ_EXTERNAL_STORAGE` and `BLUETOOTH`), in case `CAMERA` is successful, `READ_EXTERNAL_STORAGE` is failure, response will be failure for `READ_EXTERNAL_STORAGE`.
 ##### Error handling:
 ```
-if(permissionResult is Denied) {
+if(permissionResult.isDenied()) {
     if(permissionResult.isRationale()) {
         showRationale(permissionResult.getDeniedRationale())
     } else {
@@ -66,15 +76,27 @@ launch {
     }
 }
 ```
-##### Also thinking to add api like this:
+##### Permission result callbacks: 
 ```
-val permissionJob = coper.withPermissions(Manifest.permission.CAMERA) {
-    launchCamera()
-}.onDeny { denied -> // emits `PermissionResult.Denied`
-    showInstructions(denied)
+coper.request(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.CAMERA
+).onSuccess { grantedResult ->
+    handleGrantedPermission(grantedResult)
+}.onDeny { deniedResult ->
+    handleDeniedPermission(deniedResult)
 }
 ```
+##### Also thinking to add api like this:
+```
+coper.withPermissions(Manifest.permission.CAMERA) {
+    launchCamera()
+}
+```
+###### Note:
+If permission will not be granted, then request crash with `PermissionsRequestFailedException`
 ### Cancelation
-Putting application to background or screen rotation will cancel all jobs with `PermissionCancelationException`. Getting back to application you should start this permission request one more time.
-
-If you cancel job, it will cancel all permission requests.
+If you cancel job, request will be left until user will submit, but client will not get response.
+### State recreation
+Sometimes after application killed (for example temporally killing to preserve memory), the dialog could be still visible, but reference to request will be lost.
+Putting application to background or `onConfigurationChange` will not affect request.

@@ -1,10 +1,12 @@
 package com.vinted.coper.example
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.vinted.coper.Coper
 import com.vinted.coper.PermissionResult
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -24,9 +26,12 @@ class PermissionExampleInBusinessSideViewModel(
     }
 
     fun onTwoPermissionsClickedWithOneRequest(permissionOne: String, permissionTwo: String) {
-        launch {
-            val result = coper.request(permissionOne, permissionTwo)
-            _permissionRequestResultEvent.postValue(result)
+        launch(CoroutineExceptionHandler { _, exception ->
+            Log.e(TAG, "Permission request not successful: $exception")
+        }) {
+            coper.withPermissions(permissionOne, permissionTwo) {
+                _permissionRequestResultEvent.postValue(it)
+            }
         }
     }
 
@@ -37,5 +42,9 @@ class PermissionExampleInBusinessSideViewModel(
             _permissionRequestResultEvent.postValue(firstPermissionResult)
             _permissionRequestResultEvent.postValue(secondPermissionResult)
         }
+    }
+
+    companion object {
+        private const val TAG = "PermissionViewModel"
     }
 }
