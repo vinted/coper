@@ -201,8 +201,8 @@ class CoperImplTest {
         }
     }
 
-    // Because this is parallel request execution, it is safer to leave this with timeout
-    @Test(timeout = 10000)
+    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
+    @Test
     @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_twoParallelPermissionsRequestBothGranted_bothGotGranted() {
         runBlocking {
@@ -234,6 +234,7 @@ class CoperImplTest {
         }
     }
 
+    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
     @Config(sdk = [Build.VERSION_CODES.O_MR1])
     @Test(timeout = 10000)
     fun request_twoParallelPermissionsRequestFromDiffReferences_bothGotGrantedSynchronously() {
@@ -443,7 +444,9 @@ class CoperImplTest {
         }
     }
 
-    @Test(timeout = 1000)
+    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_twoIdenticalRequest_twoRequestCompleted() {
         runBlocking {
             val permission = "sameRequest"
@@ -469,7 +472,9 @@ class CoperImplTest {
         }
     }
 
-    @Test(timeout = 1000)
+    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_twoIdenticalRequestButOrderIsDifferent_twoRequestCompleted() {
         runBlocking {
             val firstPermission = "firstPermission"
