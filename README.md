@@ -1,11 +1,26 @@
 # Coper (Coroutines permissions) 
 
 [![Build Status](https://travis-ci.com/vinted/coper.svg?token=jJbXr9K9ZKMgFDkycBtv&branch=master)](https://travis-ci.com/vinted/coper)
+[![](https://jitpack.io/v/vinted/coper.svg)](https://jitpack.io/#vinted/coper)
 
 Library, which lets you to request android runtime permissions using coroutines. 
 This library will create separate fragment in fragment manager and handle all permission request there.
 Fragment lifecycle is covered by this library, so you should not worry about request cancellation.
 It is designed to use in any place like ViewModel as in fragment or activity.
+
+### Download
+```
+allprojects {
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+	
+dependencies {
+    implementation 'com.github.vinted:coper:0.1'
+}
+```
 
 ### Api
 ```
