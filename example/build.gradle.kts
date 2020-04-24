@@ -19,8 +19,6 @@ android {
         applicationId = "com.vinted.coper.example"
         minSdkVersion(Versions.MIN_SDK_VERSION)
         targetSdkVersion(Versions.TARGET_SDK_VERSION)
-        versionCode = Versions.VERSION
-        versionName = Versions.VERSION_CODE
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
