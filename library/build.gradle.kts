@@ -1,8 +1,11 @@
 plugins {
     id("com.android.library")
+    id("com.github.dcendents.android-maven")
     kotlin("android")
     kotlin("android.extensions")
 }
+
+group = "com.github.vinted"
 
 android {
     compileSdkVersion(Versions.COMPILE_SDK_VERSION)
