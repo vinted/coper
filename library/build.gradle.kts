@@ -3,9 +3,8 @@ plugins {
     id("com.github.dcendents.android-maven")
     kotlin("android")
     kotlin("android.extensions")
+    maven
 }
-
-group = "com.github.vinted"
 
 android {
     compileSdkVersion(Versions.COMPILE_SDK_VERSION)
@@ -19,10 +18,6 @@ android {
     }
 
     buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-
         kotlinOptions {
             freeCompilerArgs = listOf("-Xopt-in=kotlin.contracts.ExperimentalContracts")
 
