@@ -3,7 +3,6 @@ plugins {
     id("com.github.dcendents.android-maven")
     kotlin("android")
     kotlin("android.extensions")
-    maven
 }
 
 android {
