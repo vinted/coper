@@ -20,7 +20,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE, sdk = [Build.VERSION_CODES.O_MR1, Build.VERSION_CODES.LOLLIPOP])
+@Config(manifest = Config.NONE, sdk = [Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.O_MR1])
 class CoperImplTest {
 
     private val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
@@ -85,6 +85,7 @@ class CoperImplTest {
 
             assertTrue(response is PermissionResult.Denied)
             assertTrue { response.isRationale() }
+            assertTrue { response.getDeniedRationale().isNotEmpty() }
         }
     }
 
@@ -102,7 +103,72 @@ class CoperImplTest {
             )
 
             assertTrue(response is PermissionResult.Denied)
-            assertFalse { response.isRationale() }
+            assertTrue { response.isPermanentlyDenied() }
+            assertTrue { response.getDeniedPermanently().isNotEmpty() }
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.O_MR1])
+    fun request_permissionsIsDeniedPermanentlyAndOtherRationale_bothPermissionsExist() {
+        runBlocking {
+            val permissionPermanently = "denied_perm"
+            val permissionRationale = "denied_rat"
+            mockCheckPermissions(permissionPermanently, PackageManager.PERMISSION_DENIED)
+            whenever(activity.shouldShowRequestPermissionRationale(permissionPermanently)).thenReturn(
+                false
+            )
+            mockCheckPermissions(permissionRationale, PackageManager.PERMISSION_DENIED)
+            whenever(activity.shouldShowRequestPermissionRationale(permissionRationale)).thenReturn(
+                true
+            )
+
+            val response = executePermissionRequest(
+                permissions = listOf(permissionPermanently, permissionRationale),
+                permissionResult = listOf(
+                    PermissionChecker.PERMISSION_DENIED,
+                    PermissionChecker.PERMISSION_DENIED
+                )
+            )
+
+            assertTrue(response is PermissionResult.Denied)
+            assertTrue(response.isPermanentlyDenied())
+            assertTrue(response.getDeniedPermanently().contains(permissionPermanently))
+            assertTrue(response.isRationale())
+            assertTrue(response.getDeniedRationale().contains(permissionRationale))
+            assertTrue(
+                response.getAllDeniedPermissions().containsAll(
+                    listOf(
+                        permissionPermanently,
+                        permissionRationale
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun request_twoPermissionsOneGrantedAndOneDenied_onePermissionEmitsToOnGrantedOtherToOnDenied() {
+        runBlocking {
+            val permissionDenied = "denied"
+            mockCheckPermissions(permissionDenied, PackageManager.PERMISSION_DENIED)
+            val permissionGranted = "granted"
+            mockCheckPermissions(permissionGranted, PackageManager.PERMISSION_DENIED)
+
+            val response = executePermissionRequest(
+                permissions = listOf(permissionGranted, permissionDenied),
+                permissionResult = listOf(
+                    PermissionChecker.PERMISSION_GRANTED,
+                    PermissionChecker.PERMISSION_DENIED
+                )
+            )
+
+            response
+                .onGranted {
+                    assertTrue(it.grantedPermissions.contains(permissionGranted))
+                }.onDenied {
+                    assertTrue(it.getAllDeniedPermissions().contains(permissionDenied))
+                }
         }
     }
 
