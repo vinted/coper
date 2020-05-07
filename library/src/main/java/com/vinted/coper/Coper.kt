@@ -46,4 +46,6 @@ interface Coper {
         vararg permissions: String,
         onSuccess: suspend (PermissionResult.Granted) -> Unit
     )
+
+    fun isRequestPending(): Boolean
 }

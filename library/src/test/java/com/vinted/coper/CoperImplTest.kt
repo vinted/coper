@@ -560,6 +560,29 @@ class CoperImplTest {
         }
     }
 
+    @Test
+    fun isRequestPending_requestNotPending_returnsFalse() {
+        val isPending = fixture.isRequestPending()
+
+        assertFalse(isPending)
+    }
+
+    @Test
+    fun isRequestPending_requestIsPending_returnsTrue() {
+        mockCheckPermissions("test", PermissionChecker.PERMISSION_DENIED)
+        runBlocking {
+            val responseAsync = async {
+                fixture.request("test")
+            }
+            delay(5)
+
+            val isPending = fixture.isRequestPending()
+
+            assertTrue(isPending)
+            responseAsync.cancel()
+        }
+    }
+
     private suspend fun executePermissionRequest(
         permissions: List<String>,
         permissionResult: List<Int>,

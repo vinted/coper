@@ -33,6 +33,10 @@ internal class CoperImpl(private val fragmentManager: FragmentManager) : Coper {
         getFragment().requestPermission(permissions)
     }
 
+    override fun isRequestPending(): Boolean {
+        return getFragment().isRequestPending()
+    }
+
     @Synchronized
     internal fun getFragment(): CoperFragment {
         val fragment = fragmentManager.findFragmentByTag(FRAGMENT_TAG) as? CoperFragment

@@ -43,6 +43,11 @@ internal class CoperFragment : Fragment() {
         }
     }
 
+    internal fun isRequestPending(): Boolean {
+        val permissionRequestState = permissionRequestState
+        return permissionRequestState != null && !permissionRequestState.deferred.isCompleted
+    }
+
     internal suspend fun requestPermission(permissions: Array<out String>): PermissionResult {
         return mutex.withLock {
             val checkPermissionResults = checkPermissions(permissions)
