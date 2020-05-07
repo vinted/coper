@@ -1,6 +1,7 @@
 package com.vinted.coper
 
 import android.os.Bundle
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.Fragment
@@ -119,8 +120,14 @@ internal class CoperFragment : Fragment() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode != REQUEST_CODE) return
-        if (permissions.isEmpty() && grantResults.isEmpty()) return
+        if (requestCode != REQUEST_CODE) {
+            Log.e(TAG, "Permissions result came with not Coper request code: $requestCode")
+            return
+        }
+        if (permissions.isEmpty() && grantResults.isEmpty()) {
+            Log.i(TAG, "Permissions result and permissions came empty")
+            return
+        }
         onRequestPermissionResult(permissions.toList(), grantResults.toList())
     }
 
@@ -128,8 +135,20 @@ internal class CoperFragment : Fragment() {
         permissions: List<String>,
         permissionsResult: List<Int>
     ) {
-        val permissionRequestState = permissionRequestState ?: return
-        if (permissionRequestState.permissions.toSet() != permissions.toSet()) return
+        val permissionRequestState = permissionRequestState
+        if (permissionRequestState == null) {
+            Log.e(TAG, "Something went wrong with permission request state")
+            return
+        }
+        if (permissionRequestState.permissions.toSet() != permissions.toSet()) {
+            Log.e(
+                TAG,
+                "Permissions (${permissions.joinToString(", ")}) result came not as requested (${permissionRequestState.permissions.joinToString(
+                    ", "
+                )})"
+            )
+            return
+        }
         if (permissionsResult.size != permissions.size) {
             permissionRequestState.deferred.completeExceptionally(
                 PermissionRequestCancelException("Permissions ${permissions.size} is not same size as permissionResult: ${permissionsResult.size}")
@@ -182,6 +201,7 @@ internal class CoperFragment : Fragment() {
     )
 
     companion object {
+        private const val TAG = "CoperFragment"
         private const val REQUEST_CODE = 11111
     }
 }
