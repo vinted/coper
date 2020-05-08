@@ -1,7 +1,6 @@
 package com.vinted.coper
 
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.FragmentActivity
 import com.nhaarman.mockitokotlin2.*
@@ -20,13 +19,14 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE, sdk = [Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.O_MR1])
+@Config(manifest = Config.NONE, sdk = [23, 27])
 class CoperImplTest {
 
     private val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
     private val activity: FragmentActivity = spy(activityController.setup().get())
     private val shadowActivity = shadowOf(activity)
     private val fixture: CoperImpl = spy(CoperImpl(activity.supportFragmentManager))
+
 
     @Before
     fun setup() = runBlocking {
@@ -36,6 +36,7 @@ class CoperImplTest {
     }
 
     @Test
+    @Config(sdk = [21, 23, 27])
     fun request_responseIsSuccessful() = runBlocking {
         val response = fixture.request("test")
 
@@ -43,6 +44,7 @@ class CoperImplTest {
     }
 
     @Test
+    @Config(sdk = [21, 23, 27])
     fun request_permissionsIsGranted_grantedListConsistOfThisPermission() {
         runBlocking {
             val permissionName = "granted"
@@ -56,6 +58,7 @@ class CoperImplTest {
     }
 
     @Test
+    @Config(sdk = [21, 23, 27])
     fun request_twoPermissionsIsGranted_grantedListConsistOfThisPermissions() {
         runBlocking {
             val firstPermission = "granted"
@@ -71,7 +74,6 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_permissionsIsDeniedRationale_permissionDeniedRationaleResult() {
         runBlocking {
             val permissionName = "denied"
@@ -90,7 +92,6 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_permissionsIsDeniedPermanently_permissionDeniedPermanentlyResult() {
         runBlocking {
             val permissionName = "denied_perm"
@@ -109,7 +110,6 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_permissionsIsDeniedPermanentlyAndOtherRationale_bothPermissionsExist() {
         runBlocking {
             val permissionPermanently = "denied_perm"
@@ -173,7 +173,6 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_permissionsIsDeniedButOnrequestGranted_permissionGrantedResult() {
         runBlocking {
             val permissionName = "denied_and_granted"
@@ -238,7 +237,6 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_twoPermissionsRequestOneDeniedPermOneRationale_permissionResultIsDeniedWithBoth() {
         runBlocking {
             val firstPermission = "first"
@@ -267,9 +265,7 @@ class CoperImplTest {
         }
     }
 
-    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_twoParallelPermissionsRequestBothGranted_bothGotGranted() {
         runBlocking {
             val firstPermission = "first"
@@ -300,8 +296,6 @@ class CoperImplTest {
         }
     }
 
-    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     @Test(timeout = 10000)
     fun request_twoParallelPermissionsRequestFromDiffReferences_bothGotGrantedSynchronously() {
         runBlocking {
@@ -424,11 +418,7 @@ class CoperImplTest {
         }
     }
 
-    // On api 21 permission request result with shadowActivity is returned by its initial deny
-    // permission value, because permission were handled differently on api 21.
-    // So this test will run on api 23 and api 27
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1, Build.VERSION_CODES.M])
     fun request_onConfigurationChange_requestDone() {
         runBlocking {
             val fixture = spy(CoperImpl(activity.supportFragmentManager))
@@ -442,10 +432,9 @@ class CoperImplTest {
             }
             delay(5)
             activity.recreate()
-            postRequestResult(
-                coperFragment = fragment,
+            fragment.onRequestPermissionResult(
                 permissions = listOf(permission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED)
             )
             val result = job.await()
 
@@ -477,16 +466,21 @@ class CoperImplTest {
         val permission = "permission"
         mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
         val fragment = fixture.getFragment()
+        whenever(
+            fragment.requestPermissions(
+                eq(listOf(permission).toTypedArray()),
+                anyOrNull()
+            )
+        ).then {
+            fragment.onRequestPermissionResult(
+                permissions = listOf("test"),
+                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
+        }
 
         val responseAsync = async {
             fixture.request(permission)
         }
-        postRequestResult(
-            fragment,
-            listOf("test"),
-            listOf(PermissionChecker.PERMISSION_GRANTED)
-        )
-        delay(5)
 
         assertFalse { responseAsync.isCompleted }
         responseAsync.cancel()
@@ -510,9 +504,7 @@ class CoperImplTest {
         }
     }
 
-    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_twoIdenticalRequest_twoRequestCompleted() {
         runBlocking {
             val permission = "sameRequest"
@@ -538,9 +530,7 @@ class CoperImplTest {
         }
     }
 
-    // Paralel tests are run on version above or equal to 23 sdk, because, they can be stubbed
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_twoIdenticalRequestButOrderIsDifferent_twoRequestCompleted() {
         runBlocking {
             val firstPermission = "firstPermission"
@@ -570,7 +560,6 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.O_MR1])
     fun request_permissionsRequestedButDifferentOrderPermissionsCameAsResult_permissionsGranted_version27() {
         runBlocking {
             val firstPermission = "firstPermission"
@@ -594,33 +583,6 @@ class CoperImplTest {
             }
 
             val response = fixture.request(firstPermission, secondPermission)
-
-            assertTrue(response.isGranted())
-        }
-    }
-
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
-    fun request_permissionsRequestedButDifferentOrderPermissionsCameAsResult_permissionsGranted_version21() {
-        runBlocking {
-            val firstPermission = "firstPermission"
-            val secondPermission = "secondPermission"
-            mockCheckPermissions(firstPermission, PermissionChecker.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PermissionChecker.PERMISSION_DENIED)
-            val coperFragment = fixture.getFragment()
-
-            val responseAsync = async {
-                fixture.request(firstPermission, secondPermission)
-            }
-            postRequestResult(
-                coperFragment = coperFragment,
-                permissions = listOf(secondPermission, firstPermission),
-                permissionResult = listOf(
-                    PermissionChecker.PERMISSION_GRANTED,
-                    PermissionChecker.PERMISSION_GRANTED
-                )
-            )
-            val response = responseAsync.await()
 
             assertTrue(response.isGranted())
         }
@@ -655,20 +617,12 @@ class CoperImplTest {
         coperImplReference: CoperImpl = fixture
     ): PermissionResult {
         return coroutineScope {
-            if (Build.VERSION.SDK_INT >= 23) {
-                stubRequestPermission(
-                    coperFragment = coperImplReference.getFragment(),
-                    permissions = permissions,
-                    permissionResults = permissionResult
-                )
-                coperImplReference.request(*permissions.toTypedArray())
-            } else {
-                val responseAsync = async {
-                    coperImplReference.request(*permissions.toTypedArray())
-                }
-                postRequestResult(coperImplReference.getFragment(), permissions, permissionResult)
-                responseAsync.await()
-            }
+            stubRequestPermission(
+                coperFragment = coperImplReference.getFragment(),
+                permissions = permissions,
+                permissionResults = permissionResult
+            )
+            coperImplReference.request(*permissions.toTypedArray())
         }
     }
 
@@ -679,40 +633,17 @@ class CoperImplTest {
         onSuccess: (PermissionResult.Granted) -> Unit
     ) {
         coroutineScope {
-            if (Build.VERSION.SDK_INT >= 23) {
-                stubRequestPermission(
-                    coperFragment = coperImplReference.getFragment(),
-                    permissions = permissions,
-                    permissionResults = permissionResult
-                )
-                coperImplReference.withPermissions(*permissions.toTypedArray()) {
-                    onSuccess(it)
-                }
-            } else {
-                val responseAsync = async {
-                    coperImplReference.withPermissions(*permissions.toTypedArray()) {
-                        onSuccess(it)
-                    }
-                }
-                postRequestResult(coperImplReference.getFragment(), permissions, permissionResult)
-                responseAsync.await()
+            stubRequestPermission(
+                coperFragment = coperImplReference.getFragment(),
+                permissions = permissions,
+                permissionResults = permissionResult
+            )
+            coperImplReference.withPermissions(*permissions.toTypedArray()) {
+                onSuccess(it)
             }
         }
     }
 
-    private suspend fun postRequestResult(
-        coperFragment: CoperFragment,
-        permissions: List<String>,
-        permissionResult: List<Int>
-    ) = coroutineScope {
-        delay(5)
-        coperFragment.onRequestPermissionResult(
-            permissions = permissions,
-            permissionsResult = permissionResult
-        )
-    }
-
-    // Only available above api 23
     private fun stubRequestPermission(
         coperFragment: CoperFragment,
         permissions: List<String>,
