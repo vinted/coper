@@ -27,7 +27,6 @@ class CoperImplTest {
     private val shadowActivity = shadowOf(activity)
     private val fixture: CoperImpl = spy(CoperImpl(activity.supportFragmentManager))
 
-
     @Before
     fun setup() = runBlocking {
         whenever(fixture.isTestDispatcher).thenReturn(true)
@@ -629,6 +628,36 @@ class CoperImplTest {
             assertTrue(isPending)
             responseAsync.cancel()
         }
+    }
+
+    @Test
+    @Config(sdk = [21, 23, 27])
+    fun isPermissionsGranted_permissionsNotGranted_returnsFalse() {
+        mockCheckPermissions("not_granted", PermissionChecker.PERMISSION_DENIED)
+
+        val isGranted = fixture.isPermissionsGranted("not_granted")
+
+        assertFalse(isGranted)
+    }
+
+    @Test
+    @Config(sdk = [21, 23, 27])
+    fun isPermissionsGranted_permissionsNotGrantedByOp_returnsFalse() {
+        mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
+
+        val isGranted = fixture.isPermissionsGranted("not_granted_op")
+
+        assertFalse(isGranted)
+    }
+
+    @Test
+    @Config(sdk = [21, 23, 27])
+    fun isPermissionsGranted_permissionsGranted_returnsTrue() {
+        mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
+
+        val isGranted = fixture.isPermissionsGranted("granted")
+
+        assertTrue(isGranted)
     }
 
     @Test

@@ -48,4 +48,6 @@ interface Coper {
     )
 
     fun isRequestPending(): Boolean
+
+    fun isPermissionsGranted(vararg permissions: String): Boolean
 }

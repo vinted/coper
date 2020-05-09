@@ -44,6 +44,12 @@ internal class CoperFragment : Fragment() {
         }
     }
 
+    internal fun isPermissionsGranted(permissions: Array<out String>): Boolean {
+        val permissionCheckResult = checkPermissions(permissions)
+        val grantedPermissions = permissionCheckResult.filterGrantedPermissions()
+        return grantedPermissions.isNotEmpty()
+    }
+
     internal fun isRequestPending(): Boolean {
         val permissionRequestState = permissionRequestState
         return permissionRequestState != null && !permissionRequestState.deferred.isCompleted
