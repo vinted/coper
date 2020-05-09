@@ -74,6 +74,20 @@ class CoperImplTest {
     }
 
     @Test
+    @Config(sdk = [21])
+    fun request_sdkUnder23AndPermissionsDenied_permissionResultDeniedWaitingResult() {
+        runBlocking {
+            val permission = "denied"
+            mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
+
+            val response = fixture.request(permission)
+
+            assertTrue(response.isDenied())
+            assertEquals(listOf(permission), response.getAllDeniedPermissions())
+        }
+    }
+
+    @Test
     fun request_permissionsIsDeniedRationale_permissionDeniedRationaleResult() {
         runBlocking {
             val permissionName = "denied"
@@ -296,7 +310,7 @@ class CoperImplTest {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
     fun request_twoParallelPermissionsRequestFromDiffReferences_bothGotGrantedSynchronously() {
         runBlocking {
             val firstPermission = "first"
@@ -369,11 +383,17 @@ class CoperImplTest {
         }
     }
 
-    @Test(expected = IllegalStateException::class, timeout = 10000)
+    @Test(expected = IllegalStateException::class)
     fun request_onIoThread_shouldCrash() {
-        val fixture = CoperImpl(activity.supportFragmentManager)
+        val fixture = spy(CoperImpl(activity.supportFragmentManager))
+        fixture.mockGetFragmentWithStub()
+
         runBlocking(Dispatchers.IO) {
-            fixture.request("test")
+            executePermissionRequest(
+                coperImplReference = fixture,
+                permissions = listOf("test"),
+                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
         }
     }
 
@@ -445,7 +465,7 @@ class CoperImplTest {
     @Test
     fun withPermissions_requestGranted_bodyRun() = runBlocking {
         val permission = "permission"
-        shadowActivity.denyPermissions(permission)
+        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
 
         executeWithPermission(listOf(permission), listOf(PermissionChecker.PERMISSION_GRANTED)) {
             assertTrue { it.grantedPermissions.isNotEmpty() }
@@ -560,7 +580,7 @@ class CoperImplTest {
     }
 
     @Test
-    fun request_permissionsRequestedButDifferentOrderPermissionsCameAsResult_permissionsGranted_version27() {
+    fun request_permissionsRequestedButDifferentOrderPermissionsCameAsResult_permissionsGranted() {
         runBlocking {
             val firstPermission = "firstPermission"
             val secondPermission = "secondPermission"
@@ -608,6 +628,32 @@ class CoperImplTest {
 
             assertTrue(isPending)
             responseAsync.cancel()
+        }
+    }
+
+    @Test
+    fun request_manyParallelRequestsAllGranted_allGranted() {
+        runBlocking {
+            val testCount = 1000
+            val requests = mutableListOf<Deferred<PermissionResult>>()
+            for (i in 0 until testCount) {
+                val permission = "test-$i"
+                mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+
+                requests.add(async {
+                    executePermissionRequest(
+                        permissions = listOf(permission),
+                        permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+                    )
+                })
+            }
+            val requestResults = requests.awaitAll()
+
+            assertEquals(testCount, requestResults.size)
+            requestResults.forEachIndexed { index, permissionResult ->
+                assertTrue(permissionResult.isGranted())
+                assertEquals("test-$index", permissionResult.grantedPermissions.first())
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.vinted.coper
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -51,7 +52,7 @@ internal class CoperFragment : Fragment() {
     internal suspend fun requestPermission(permissions: Array<out String>): PermissionResult {
         return mutex.withLock {
             val checkPermissionResults = checkPermissions(permissions)
-            val result = getPermissionResult(checkPermissionResults)
+            val result = getPermissionsResult(checkPermissionResults)
             permissionRequestState = null
             result
         }
@@ -72,7 +73,7 @@ internal class CoperFragment : Fragment() {
         return permissionResults
     }
 
-    private suspend fun getPermissionResult(
+    private suspend fun getPermissionsResult(
         permissionChecks: List<PermissionCheckResult>,
         grantedPermissions: List<String> = emptyList(),
         isSecondTime: Boolean = false
@@ -83,10 +84,10 @@ internal class CoperFragment : Fragment() {
             PermissionResult.Granted(grantedPermissions + granted)
         } else {
             if (isSecondTime) {
-                getDeniedPermissionResult(denied)
+                getDeniedPermissionsResult(denied)
             } else {
-                getPermissionResult(
-                    permissionChecks = requestPermissionAsync(denied.toTypedArray()).await(),
+                getPermissionsResult(
+                    permissionChecks = requestPermissionsByVersion(denied.toTypedArray()),
                     grantedPermissions = granted,
                     isSecondTime = true
                 )
@@ -94,7 +95,7 @@ internal class CoperFragment : Fragment() {
         }
     }
 
-    private fun getDeniedPermissionResult(permissions: List<String>): PermissionResult {
+    private fun getDeniedPermissionsResult(permissions: List<String>): PermissionResult {
         val deniedPermissions = permissions.map { permission ->
             val needsRationale = ActivityCompat
                 .shouldShowRequestPermissionRationale(requireActivity(), permission)
@@ -107,7 +108,22 @@ internal class CoperFragment : Fragment() {
         return PermissionResult.Denied(deniedPermissions)
     }
 
-    private fun requestPermissionAsync(
+    // On devices with lower sdk than 23, there is no requesting permissions.
+    private suspend fun requestPermissionsByVersion(
+        permissions: Array<out String>
+    ): List<PermissionCheckResult> {
+        return if (isDeviceSdkAtLeast23()) {
+            requestPermissionsAsync(permissions).await()
+        } else {
+            permissions.map { PermissionCheckResult.Denied(it) }
+        }
+    }
+
+    private fun isDeviceSdkAtLeast23(): Boolean {
+        return Build.VERSION.SDK_INT >= 23
+    }
+
+    private fun requestPermissionsAsync(
         permissions: Array<out String>
     ): Deferred<List<PermissionCheckResult>> {
         val requestDeferred = CompletableDeferred<List<PermissionCheckResult>>()
