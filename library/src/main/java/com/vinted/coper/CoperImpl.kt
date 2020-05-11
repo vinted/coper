@@ -16,7 +16,7 @@ internal class CoperImpl(private val fragmentManager: FragmentManager) : Coper {
         vararg permissions: String,
         onSuccess: suspend (PermissionResult.Granted) -> Unit
     ) {
-        val result = request(*permissions)
+        val result = requestPermissions(permissions)
         if (result.isGranted()) {
             onSuccess(result)
         } else {
@@ -25,7 +25,11 @@ internal class CoperImpl(private val fragmentManager: FragmentManager) : Coper {
 
     }
 
-    override suspend fun request(vararg permissions: String): PermissionResult = coroutineScope {
+    override suspend fun request(vararg permissions: String): PermissionResult {
+        return requestPermissions(permissions)
+    }
+
+    private suspend fun requestPermissions(permissions: Array<out String>) = coroutineScope {
         check(permissions.isNotEmpty()) { "Cant request 0 permissions" }
         check(isTestDispatcher || coroutineContext[ContinuationInterceptor] == Dispatchers.Main) {
             "Request handled on ${coroutineContext[ContinuationInterceptor]}, should be done on main dispatcher"
