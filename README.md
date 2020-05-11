@@ -117,9 +117,9 @@ coper.isRequestPending()
 ```
 ###### Granted permissions check:
 ```
+// Returns true if all permissions granted
 coper.isPermissionsGranted(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION) 
 ```
-####### Note: returns true if all permissions granted
 ### Cancelation
 If you cancel job, request will be left until user will submit, but client will not get response.
 ### State recreation

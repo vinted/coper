@@ -49,5 +49,8 @@ interface Coper {
 
     fun isRequestPending(): Boolean
 
+    /**
+     * @return true if all [permissions] is granted, false if at least one denied.
+     */
     fun isPermissionsGranted(vararg permissions: String): Boolean
 }
