@@ -11,8 +11,10 @@ package com.vinted.coper
 interface Coper {
 
     /**
-     * Request for permissions at runtime and get permission result, when user submits all permissions.
-     * Request could only be done on [kotlinx.coroutines.Dispatchers.Main], otherwise will throw [IllegalStateException].
+     * Request for permissions at runtime and get permission result,
+     * when user submits all permissions.
+     * Request could only be done on [kotlinx.coroutines.Dispatchers.Main],
+     * otherwise will throw [IllegalStateException].
      * Example:
      * ```
      * coper.request(Manifest.permission.CAMERA)
@@ -24,14 +26,16 @@ interface Coper {
      * ```
      * @return [PermissionResult] which could be [PermissionResult.Granted] or [PermissionResult.Denied]
      * @throws IllegalStateException if [permissions] will be empty, [withPermissions]
-     * @throws PermissionRequestCancelException to [withPermissions] job, if fragment will be destroyed while [withPermissions] is pending
+     * @throws PermissionRequestCancelException to [withPermissions] job, if fragment
+     * will be destroyed while [withPermissions] is pending
      */
     suspend fun request(vararg permissions: String): PermissionResult
 
     /**
      * Request permissions [withPermissions] and execute [onSuccess] if all permissions granted.
      * [onSuccess] will have [PermissionResult.Granted] in body.
-     * Request could only be done on [kotlinx.coroutines.Dispatchers.Main], otherwise will throw [IllegalStateException].
+     * Request could only be done on [kotlinx.coroutines.Dispatchers.Main],
+     * otherwise will throw [IllegalStateException].
      * Example:
      * ```
      * coper.withPermissions(Manifest.permission.CAMERA) { grantedResult ->
@@ -40,7 +44,8 @@ interface Coper {
      * ```
      * @throws PermissionsRequestFailedException if permission were denied
      * @throws IllegalStateException if [permissions] will be empty, [withPermissions]
-     * @throws PermissionRequestCancelException to [withPermissions] job, if fragment will be destroyed while [withPermissions] is pending
+     * @throws PermissionRequestCancelException to [withPermissions] job, if fragment
+     * will be destroyed while [withPermissions] is pending
      */
     suspend fun withPermissions(
         vararg permissions: String,

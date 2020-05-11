@@ -19,10 +19,10 @@ internal class CoperFragment : Fragment() {
     private var permissionRequestState: PermissionRequestState? = null
         set(value) {
             if (field?.deferred?.isCompleted == false) {
-                val message =
-                    "Request with: ${value?.permissions?.joinToString(", ")} created while other request with: ${field?.permissions?.joinToString(
-                        ", "
-                    )} were running"
+                val requestedPermissions = value?.permissions?.joinToString(", ")
+                val currentPermissions = field?.permissions?.joinToString(", ")
+                val message = "Request with: $requestedPermissions + created while other request" +
+                        " with: $currentPermissions were running"
                 field?.deferred?.cancel(
                     PermissionRequestCancelException(message)
                 )
@@ -118,15 +118,15 @@ internal class CoperFragment : Fragment() {
     private suspend fun requestPermissionsByVersion(
         permissions: Array<out String>
     ): List<PermissionCheckResult> {
-        return if (isDeviceSdkAtLeast23()) {
+        return if (isDeviceSdkAtLeastMarshmallow()) {
             requestPermissionsAsync(permissions).await()
         } else {
             permissions.map { PermissionCheckResult.Denied(it) }
         }
     }
 
-    private fun isDeviceSdkAtLeast23(): Boolean {
-        return Build.VERSION.SDK_INT >= 23
+    private fun isDeviceSdkAtLeastMarshmallow(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
     }
 
     private fun requestPermissionsAsync(
@@ -168,17 +168,18 @@ internal class CoperFragment : Fragment() {
             return
         }
         if (permissionRequestState.permissions.toSet() != permissions.toSet()) {
-            Log.e(
-                TAG,
-                "Permissions (${permissions.joinToString(", ")}) result came not as requested (${permissionRequestState.permissions.joinToString(
-                    ", "
-                )})"
-            )
+            val permissionsInResult = permissions.joinToString(", ")
+            val currentRequestedPermissions = permissionRequestState.permissions.joinToString(", ")
+            val message = "Permissions ($permissionsInResult) result came not as requested " +
+                    "($currentRequestedPermissions)"
+            Log.e(TAG, message)
             return
         }
         if (permissionsResult.size != permissions.size) {
+            val message = "Permissions ${permissions.size} is not same size as " +
+                    "permissionResult: ${permissionsResult.size}"
             permissionRequestState.deferred.completeExceptionally(
-                PermissionRequestCancelException("Permissions ${permissions.size} is not same size as permissionResult: ${permissionsResult.size}")
+                PermissionRequestCancelException(message)
             )
             return
         }
@@ -216,7 +217,11 @@ internal class CoperFragment : Fragment() {
                     PermissionChecker.PERMISSION_GRANTED -> Granted(permission)
                     PermissionChecker.PERMISSION_DENIED,
                     PermissionChecker.PERMISSION_DENIED_APP_OP -> Denied(permission)
-                    else -> throw IllegalStateException("Not expected permission result: $permissionResult for $permission")
+                    else -> {
+                        val message = "Not expected permission result: $permissionResult " +
+                                "for $permission"
+                        throw IllegalStateException(message)
+                    }
                 }
             }
         }
