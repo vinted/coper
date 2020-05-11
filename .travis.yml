@@ -22,5 +22,5 @@ jobs:
       script: ./gradlew build
     - stage: detekt & lint
       name: detekt & lint
-      script: ./gradlew detekt
+      script: ./gradlew detekt lint
 
