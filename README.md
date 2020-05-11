@@ -102,7 +102,7 @@ coper.request(
     handleDeniedPermission(deniedResult)
 }
 ```
-##### Also thinking to add api like this:
+##### Execute body if all permissions enabled or throw error:
 ```
 coper.withPermissions(Manifest.permission.CAMERA) {
     launchCamera()
@@ -110,14 +110,22 @@ coper.withPermissions(Manifest.permission.CAMERA) {
 ```
 ###### Note:
 If permission will not be granted, then request crash with `PermissionsRequestFailedException`
+##### Additional functionality:
+###### Request pending check:
+```
+coper.isRequestPending()
+```
+###### Granted permissions check:
+```
+// Returns true if all permissions granted
+coper.isPermissionsGranted(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION) 
+```
 ### Cancelation
 If you cancel job, request will be left until user will submit, but client will not get response.
 ### State recreation
 Sometimes after application killed (for example temporally killing to preserve memory), the dialog could be still visible, but reference to request will be lost.
 Putting application to background or `onConfigurationChange` will not affect request.
-
 ### License
-
 ```
 MIT License
 

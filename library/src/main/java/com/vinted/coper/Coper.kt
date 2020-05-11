@@ -46,4 +46,11 @@ interface Coper {
         vararg permissions: String,
         onSuccess: suspend (PermissionResult.Granted) -> Unit
     )
+
+    fun isRequestPending(): Boolean
+
+    /**
+     * @return true if all [permissions] is granted, false if at least one denied.
+     */
+    fun isPermissionsGranted(vararg permissions: String): Boolean
 }
