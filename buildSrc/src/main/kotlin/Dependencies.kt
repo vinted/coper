@@ -10,6 +10,7 @@ object Versions {
     const val CORE_KTX = "1.2.0"
     const val FRAGMENT_KTX = "1.2.4"
     const val ANDROID_MAVEN = "2.1"
+    const val DETEKT_RUNTIME = "1.8.0"
 
     const val COMPILE_SDK_VERSION = 28
     const val MIN_SDK_VERSION = 21

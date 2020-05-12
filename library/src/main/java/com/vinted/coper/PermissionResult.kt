@@ -46,7 +46,7 @@ sealed class PermissionResult {
         fun getDeniedRationale(): List<String> {
             return deniedPermissions
                 .filterIsInstance<DeniedPermission.NeedsRationale>()
-                .map { it.deniedPermission }
+                .map { it.permission }
         }
 
         /**
@@ -55,21 +55,21 @@ sealed class PermissionResult {
         fun getDeniedPermanently(): List<String> {
             return deniedPermissions
                 .filterIsInstance<DeniedPermission.DeniedPermanently>()
-                .map { it.deniedPermission }
+                .map { it.permission }
         }
 
         /**
          * Get all denied permissions.
          */
         fun getAllDeniedPermissions(): List<String> {
-            return deniedPermissions.map { it.deniedPermission }
+            return deniedPermissions.map { it.permission }
         }
 
         internal sealed class DeniedPermission {
-            abstract val deniedPermission: String
+            abstract val permission: String
 
-            data class NeedsRationale(override val deniedPermission: String) : DeniedPermission()
-            data class DeniedPermanently(override val deniedPermission: String) : DeniedPermission()
+            data class NeedsRationale(override val permission: String) : DeniedPermission()
+            data class DeniedPermanently(override val permission: String) : DeniedPermission()
         }
     }
 
