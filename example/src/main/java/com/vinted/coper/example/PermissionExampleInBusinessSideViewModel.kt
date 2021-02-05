@@ -6,7 +6,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.vinted.coper.Coper
 import com.vinted.coper.PermissionResult
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineExceptionHandler
 
 class PermissionExampleInBusinessSideViewModel(
     private val coper: Coper
