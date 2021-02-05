@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="10dp"
-        android:text="Request one permission" />
+        android:text="Request one permission in IO thread" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/permission_example_in_business_request_two_permission_one_request"

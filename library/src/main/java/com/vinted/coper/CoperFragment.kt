@@ -3,6 +3,7 @@ package com.vinted.coper
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.Fragment
@@ -15,9 +16,13 @@ internal class CoperFragment : Fragment() {
 
     private val mutex = Mutex()
 
+    private var triggerPermissionRequest: CompletableDeferred<Unit>? = null
+
     // If job is not completed, then it is cancelled, when changed
     private var permissionRequestState: PermissionRequestState? = null
         set(value) {
+            if (value != null) triggerPermissionRequest?.complete(Unit)
+            triggerPermissionRequest = null
             if (field?.deferred?.isCompleted == false) {
                 val requestedPermissions = value?.permissions?.joinToString(", ")
                 val currentPermissions = field?.permissions?.joinToString(", ")
@@ -42,6 +47,12 @@ internal class CoperFragment : Fragment() {
         if (mutex.isLocked && !permissionRequest.deferred.isCompleted) {
             requestPermissions(permissionRequest.permissions.toTypedArray(), REQUEST_CODE)
         }
+    }
+
+    @VisibleForTesting
+    internal suspend fun waitUntilRequestStart() {
+        triggerPermissionRequest = CompletableDeferred()
+        triggerPermissionRequest?.await()
     }
 
     internal fun isPermissionsGranted(permissions: Array<out String>): Boolean {

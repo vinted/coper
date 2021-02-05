@@ -15,19 +15,28 @@ import kotlin.test.assertEquals
 @Config(manifest = Config.NONE, sdk = [Build.VERSION_CODES.O_MR1])
 class CoperBuilderTest {
 
+    private val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
     lateinit var fragmentManager: FragmentManager
     lateinit var fixture: CoperBuilder
 
     @Before
     fun setup() {
-        val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
         fragmentManager = activity.supportFragmentManager
         fixture = CoperBuilder()
     }
 
     @Test
-    fun build_fragmentActivityPassed_buildSuccessful() {
+    fun build_fragmentManagerPassed_buildSuccessful() {
         fixture.setFragmentManager(fragmentManager)
+
+        val result = fixture.build()
+
+        assertEquals(CoperImpl::class.toString(), result::class.toString())
+    }
+
+    @Test
+    fun build_fragmentActivityPassed_buildSuccessful() {
+        fixture.setFragmentActivity(activity)
 
         val result = fixture.build()
 

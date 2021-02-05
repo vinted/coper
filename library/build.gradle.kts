@@ -7,11 +7,9 @@ plugins {
 
 android {
     compileSdkVersion(Versions.COMPILE_SDK_VERSION)
-    buildToolsVersion(Versions.BUILD_TOOLS_VERSION)
 
     defaultConfig {
         minSdkVersion(Versions.MIN_SDK_VERSION)
-        targetSdkVersion(Versions.TARGET_SDK_VERSION)
     }
 
     buildTypes {
@@ -50,6 +48,8 @@ tasks {
 dependencies {
     api(Libs.APP_COMPAT)
     api(Libs.KOTLIN_COROUTINES)
+    implementation(Libs.LIFECYCLE)
+    implementation(Libs.FRAGMENT_KTX)
     testImplementation(Libs.MOCKITO_KOTLIN)
     testImplementation(Libs.KOTLIN_TESTS)
     testImplementation(Libs.JUNIT)

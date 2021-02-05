@@ -4,7 +4,7 @@ package com.vinted.coper
  * To create coper instance use [CoperBuilder].
  * ```
  * val coper = CoperBuilder()
- *      .setFragmentManager(fragmentManager)
+ *      .setFragmentActivity(activity)
  *      .build()
  * ```
  */
@@ -52,10 +52,25 @@ interface Coper {
         onSuccess: suspend (PermissionResult.Granted) -> Unit
     )
 
+    suspend fun isRequestPendingSafe(): Boolean
+
+    /**
+     * @return true if all [permissions] is granted, false if at least one denied.
+     */
+    suspend fun isPermissionsGrantedSafe(vararg permissions: String): Boolean
+
+    @Deprecated(
+        message = "Use isRequestPendingSafe, it will safely use thread safe fragment commit",
+        replaceWith = ReplaceWith("isRequestPendingSafe()")
+    )
     fun isRequestPending(): Boolean
 
     /**
      * @return true if all [permissions] is granted, false if at least one denied.
      */
+    @Deprecated(
+        message = "Use isPermissionsGrantedSafe, it will safely use thread safe fragment commit",
+        replaceWith = ReplaceWith("isPermissionsGrantedSafe()")
+    )
     fun isPermissionsGranted(vararg permissions: String): Boolean
 }

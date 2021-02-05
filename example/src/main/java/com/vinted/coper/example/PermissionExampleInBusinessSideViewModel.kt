@@ -6,10 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.vinted.coper.Coper
 import com.vinted.coper.PermissionResult
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class PermissionExampleInBusinessSideViewModel(
     private val coper: Coper
@@ -19,7 +16,7 @@ class PermissionExampleInBusinessSideViewModel(
     val permissionRequestResultEvent: LiveData<PermissionResult> = _permissionRequestResultEvent
 
     fun onOnePermissionClicked(permission: String) {
-        launch {
+        launch(Dispatchers.IO) {
             val result = coper.request(permission)
             _permissionRequestResultEvent.postValue(result)
         }
