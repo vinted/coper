@@ -29,7 +29,7 @@ class CoperImplTest {
     private val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
     private val activity: FragmentActivity = spy(activityController.setup().get())
     private val shadowActivity = shadowOf(activity)
-    private val fixture: CoperImpl = spy(getCoperIntsance())
+    private val fixture: CoperImpl = spy(getCoperInstance())
 
     @Before
     fun setup() = runBlocking {
@@ -315,9 +315,9 @@ class CoperImplTest {
         runBlocking {
             val firstPermission = "first"
             val secondPermission = "second"
-            val firstCoperReference = spy(getCoperIntsance())
+            val firstCoperReference = spy(getCoperInstance())
             firstCoperReference.mockGetFragmentWithStub()
-            val secondCoperReference = spy(getCoperIntsance())
+            val secondCoperReference = spy(getCoperInstance())
             secondCoperReference.mockGetFragmentWithStub()
             mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
@@ -371,7 +371,7 @@ class CoperImplTest {
     @Test
     fun getFragment_twoRequest_sameInstance() {
         runBlocking {
-            val fixture = getCoperIntsance()
+            val fixture = getCoperInstance()
             val firstFragment = fixture.getFragmentSafely()
             val secondFragment = fixture.getFragmentSafely()
 
@@ -382,7 +382,7 @@ class CoperImplTest {
     @Test
     fun request_onIoThread_shouldNotCrash() {
         runBlocking {
-            val fixture = spy(getCoperIntsance())
+            val fixture = spy(getCoperInstance())
             fixture.mockGetFragmentWithStub()
 
             withContext(Dispatchers.IO) {
@@ -426,7 +426,7 @@ class CoperImplTest {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
             val activity = spy(activityController.setup().get())
 
-            val fixture = getCoperIntsance(
+            val fixture = getCoperInstance(
                 fragmentManager = activity.supportFragmentManager,
                 lifecycle = activity.lifecycle,
                 timeout = DEFAULT_FRAGMENT_PREPARATION_TIMEOUT
@@ -446,7 +446,7 @@ class CoperImplTest {
     @Test
     fun request_onConfigurationChange_requestDone() {
         runBlocking {
-            val fixture = spy(getCoperIntsance())
+            val fixture = spy(getCoperInstance())
             val fragment = fixture.getFragmentSafely()
             val permission = "onConfigurationChange"
             shadowActivity.denyPermissions(permission)
@@ -703,7 +703,7 @@ class CoperImplTest {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
             val activity = spy(activityController.get())
 
-            val fixture = getCoperIntsance(
+            val fixture = getCoperInstance(
                 fragmentManager = activity.supportFragmentManager,
                 lifecycle = activity.lifecycle,
                 timeout = DEFAULT_FRAGMENT_PREPARATION_TIMEOUT
@@ -778,7 +778,7 @@ class CoperImplTest {
             .thenReturn(result)
     }
 
-    private fun getCoperIntsance(
+    private fun getCoperInstance(
         fragmentManager: FragmentManager = activity.supportFragmentManager,
         lifecycle: Lifecycle = activity.lifecycle,
         timeout: Long? = null
