@@ -17,8 +17,6 @@ class CoperBuilder {
 
     private var activity: FragmentActivity? = null
 
-    private var resultFragmentCreationTimeout: Long? = null
-
     private var fragmentManager: FragmentManager? = null
 
     /**
@@ -42,15 +40,6 @@ class CoperBuilder {
     }
 
     /**
-     * Set timeout for result fragment preparation.
-     * Default -> 1s
-     */
-    fun setResultFragmentPreparationTimeout(timeout: Long): CoperBuilder {
-        this.resultFragmentCreationTimeout = timeout
-        return this
-    }
-
-    /**
      * Build [Coper].
      * If [fragmentManager] will be null on [build], then it will throw [IllegalArgumentException].
      * @return [Coper]
@@ -62,11 +51,6 @@ class CoperBuilder {
         return CoperImpl(
             fragmentManager = fragmentManager,
             lifecycle = fragmentActivity?.lifecycle,
-            fragmentAwaitingTimeout = resultFragmentCreationTimeout
         )
-    }
-
-    companion object {
-        internal const val DEFAULT_FRAGMENT_PREPARATION_TIMEOUT = 1000L
     }
 }

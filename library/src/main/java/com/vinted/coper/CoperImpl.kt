@@ -7,15 +7,17 @@ import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.resume
 
 
 internal class CoperImpl(
     private val fragmentManager: FragmentManager,
     private val lifecycle: Lifecycle?,
-    private val fragmentAwaitingTimeout: Long?,
 ) : Coper {
+
+    private val fragmentInitializationMutex = Mutex()
 
     override suspend fun withPermissions(
         vararg permissions: String,
@@ -70,37 +72,36 @@ internal class CoperImpl(
         }
     }
 
-    @Synchronized
     internal suspend fun getFragmentSafely(): CoperFragment {
-        return withTimeout(fragmentAwaitingTimeout ?: Long.MAX_VALUE) {
-            val deferred = CompletableDeferred<CoperFragment>()
-            val fragment = getAttachedFragment()
-            fragment.lifecycle.addObserver(object : DefaultLifecycleObserver {
-                override fun onCreate(owner: LifecycleOwner) {
-                    deferred.complete(fragment)
-                }
-            })
-            deferred.await()
-        }
+        val deferred = CompletableDeferred<CoperFragment>()
+        val fragment = getAttachedFragment()
+        fragment.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onCreate(owner: LifecycleOwner) {
+                deferred.complete(fragment)
+            }
+        })
+        return deferred.await()
     }
 
     private suspend fun getAttachedFragment(): CoperFragment {
-        return suspendCancellableCoroutine { continuation ->
-            val fragment = fragmentManager
-                .findFragmentByTag(FRAGMENT_TAG) as? CoperFragment
-            if (fragment == null) {
-                val newFragment = CoperFragment()
-                if (lifecycle != null) {
-                    lifecycle.addObserver(object : DefaultLifecycleObserver {
-                        override fun onCreate(owner: LifecycleOwner) {
-                            attachFragment(newFragment, continuation::resume)
-                        }
-                    })
+        return fragmentInitializationMutex.withLock {
+            suspendCancellableCoroutine { continuation ->
+                val fragment = fragmentManager
+                    .findFragmentByTag(FRAGMENT_TAG) as? CoperFragment
+                if (fragment == null) {
+                    val newFragment = CoperFragment()
+                    if (lifecycle != null) {
+                        lifecycle.addObserver(object : DefaultLifecycleObserver {
+                            override fun onCreate(owner: LifecycleOwner) {
+                                attachFragment(newFragment, continuation::resume)
+                            }
+                        })
+                    } else {
+                        attachFragment(newFragment, continuation::resume)
+                    }
                 } else {
-                    attachFragment(newFragment, continuation::resume)
+                    continuation.resume(fragment)
                 }
-            } else {
-                continuation.resume(fragment)
             }
         }
     }

@@ -7,7 +7,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.nhaarman.mockitokotlin2.*
-import com.vinted.coper.CoperBuilder.Companion.DEFAULT_FRAGMENT_PREPARATION_TIMEOUT
 import kotlinx.coroutines.*
 import org.junit.Before
 import org.junit.Test
@@ -380,6 +379,32 @@ class CoperImplTest {
     }
 
     @Test
+    fun getFragment_manyRequestAsync_sameInstance() {
+        runBlocking {
+            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+            val activity: FragmentActivity = spy(activityController.setup().get())
+            val lifecycle = spy(activity.lifecycle)
+            whenever(activity.lifecycle).thenReturn(lifecycle)
+            val fixture = getCoperInstance(
+                lifecycle = lifecycle,
+                fragmentManager = activity.supportFragmentManager
+            )
+            val fragmentPromises = mutableListOf<Deferred<CoperFragment>>()
+
+            repeat(10) {
+                fragmentPromises.add(async(Dispatchers.IO) {
+                    withTimeout(100) {
+                        fixture.getFragmentSafely()
+                    }
+                })
+            }
+
+            runCatching { fragmentPromises.awaitAll() }
+            verify(lifecycle, times(1)).addObserver(any())
+        }
+    }
+
+    @Test
     fun request_onIoThread_shouldNotCrash() {
         runBlocking {
             val fixture = spy(getCoperInstance())
@@ -429,7 +454,6 @@ class CoperImplTest {
             val fixture = getCoperInstance(
                 fragmentManager = activity.supportFragmentManager,
                 lifecycle = activity.lifecycle,
-                timeout = DEFAULT_FRAGMENT_PREPARATION_TIMEOUT
             )
 
             val fragment = fixture.getFragmentSafely()
@@ -706,10 +730,11 @@ class CoperImplTest {
             val fixture = getCoperInstance(
                 fragmentManager = activity.supportFragmentManager,
                 lifecycle = activity.lifecycle,
-                timeout = DEFAULT_FRAGMENT_PREPARATION_TIMEOUT
             )
 
-            fixture.getFragmentSafely()
+            withTimeout(100) {
+                fixture.getFragmentSafely()
+            }
         }
     }
 
@@ -780,10 +805,9 @@ class CoperImplTest {
 
     private fun getCoperInstance(
         fragmentManager: FragmentManager = activity.supportFragmentManager,
-        lifecycle: Lifecycle = activity.lifecycle,
-        timeout: Long? = null
+        lifecycle: Lifecycle? = activity.lifecycle,
     ): CoperImpl {
-        return CoperImpl(fragmentManager, lifecycle, timeout)
+        return CoperImpl(fragmentManager, lifecycle)
     }
 
     private suspend fun CoperImpl.mockGetFragmentWithStub() {
