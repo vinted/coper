@@ -380,29 +380,31 @@ class CoperImplTest {
     }
 
     @Test
-    fun getFragment_manyRequestAsync_oneCheckForLifecycle() = runBlocking {
-        val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-        val activity: FragmentActivity = spy(activityController.setup().get())
-        val lifecycle = spy(activity.lifecycle)
-        whenever(activity.lifecycle).thenReturn(lifecycle)
-        val fixture = getCoperInstance(
-            lifecycle = lifecycle,
-            fragmentManager = activity.supportFragmentManager
-        )
-        val fragmentPromises = mutableListOf<Deferred<CoperFragment?>>()
+    fun getFragment_manyRequestAsync_oneCheckForLifecycle() {
+        runBlocking {
+            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+            val activity: FragmentActivity = spy(activityController.setup().get())
+            val fragmentManager = spy(activity.supportFragmentManager)
+            whenever(activity.supportFragmentManager).thenReturn(fragmentManager)
+            val fixture = getCoperInstance(
+                lifecycle = null,
+                fragmentManager = fragmentManager
+            )
+            val fragmentPromises = mutableListOf<Deferred<CoperFragment?>>()
 
-        repeat(10) {
-            fragmentPromises.add(async(Dispatchers.IO) {
-                runCatching {
-                    withTimeout(100) {
-                        fixture.getFragmentSafely()
-                    }
-                }.getOrNull()
-            })
+            repeat(10) {
+                fragmentPromises.add(async(Dispatchers.Default) {
+                    runCatching {
+                        withTimeout(100) {
+                            fixture.getFragmentSafely()
+                        }
+                    }.getOrNull()
+                })
+            }
+
+            fragmentPromises.awaitAll()
+            verify(fragmentManager, times(1)).beginTransaction()
         }
-
-        fragmentPromises.awaitAll()
-        verify(lifecycle, times(1)).addObserver(any())
     }
 
     @Test
