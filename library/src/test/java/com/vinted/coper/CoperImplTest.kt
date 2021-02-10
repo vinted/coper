@@ -379,7 +379,7 @@ class CoperImplTest {
     }
 
     @Test
-    fun getFragment_manyRequestAsync_sameInstance() {
+    fun getFragment_manyRequestAsync_oneCheckForLifecycle() {
         runBlocking {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
             val activity: FragmentActivity = spy(activityController.setup().get())
