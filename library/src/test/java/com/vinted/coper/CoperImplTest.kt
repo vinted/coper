@@ -21,6 +21,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
+@ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [23, 27])
 class CoperImplTest {
@@ -379,29 +380,29 @@ class CoperImplTest {
     }
 
     @Test
-    fun getFragment_manyRequestAsync_oneCheckForLifecycle() {
-        runBlocking {
-            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity: FragmentActivity = spy(activityController.setup().get())
-            val lifecycle = spy(activity.lifecycle)
-            whenever(activity.lifecycle).thenReturn(lifecycle)
-            val fixture = getCoperInstance(
-                lifecycle = lifecycle,
-                fragmentManager = activity.supportFragmentManager
-            )
-            val fragmentPromises = mutableListOf<Deferred<CoperFragment>>()
+    fun getFragment_manyRequestAsync_oneCheckForLifecycle() = runBlocking {
+        val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+        val activity: FragmentActivity = spy(activityController.setup().get())
+        val lifecycle = spy(activity.lifecycle)
+        whenever(activity.lifecycle).thenReturn(lifecycle)
+        val fixture = getCoperInstance(
+            lifecycle = lifecycle,
+            fragmentManager = activity.supportFragmentManager
+        )
+        val fragmentPromises = mutableListOf<Deferred<CoperFragment?>>()
 
-            repeat(10) {
-                fragmentPromises.add(async(Dispatchers.IO) {
+        repeat(10) {
+            fragmentPromises.add(async(Dispatchers.IO) {
+                runCatching {
                     withTimeout(100) {
                         fixture.getFragmentSafely()
                     }
-                })
-            }
-
-            runCatching { fragmentPromises.awaitAll() }
-            verify(lifecycle, times(1)).addObserver(any())
+                }.getOrNull()
+            })
         }
+
+        fragmentPromises.awaitAll()
+        verify(lifecycle, times(1)).addObserver(any())
     }
 
     @Test
