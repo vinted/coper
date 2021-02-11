@@ -419,7 +419,7 @@ class CoperImplTest {
     fun getFragment_lifecycleAlreadyAfterCreated_fragmentTransactionMade() {
         runBlocking {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity = activityController.setup().pause().get()
+            val activity = spy(activityController.setup().pause().get())
             val fragmentManager = spy(activity.supportFragmentManager)
             whenever(activity.supportFragmentManager).thenReturn(fragmentManager)
             val fixture = getCoperInstance(
@@ -480,7 +480,7 @@ class CoperImplTest {
             val permission = "onDestroy"
 
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity = spy(activityController.setup().get())
+            val activity = activityController.setup().get()
 
             val fixture = getCoperInstance(
                 fragmentManager = activity.supportFragmentManager,
@@ -756,7 +756,7 @@ class CoperImplTest {
     fun getFragmentSafely_lifecycleNotReady_crashWithTimeout() {
         runBlocking {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity = spy(activityController.get())
+            val activity = activityController.get()
 
             val fixture = getCoperInstance(
                 fragmentManager = activity.supportFragmentManager,
