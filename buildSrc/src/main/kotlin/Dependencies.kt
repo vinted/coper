@@ -1,7 +1,7 @@
 object Versions {
     const val APP_COMPAT = "1.2.0"
     const val KOTLIN = "1.4.21"
-    const val COROUTINES = "1.3.5"
+    const val COROUTINES = "1.4.2"
     const val ANDROID_GRADLE_PLUGIN = "4.0.1"
     const val JUNIT = "4.13"
     const val ROBOLECTRIC = "4.3"
@@ -20,7 +20,8 @@ object Versions {
 object Libs {
     const val KOTLIN_STDLIB = "org.jetbrains.kotlin:kotlin-stdlib:${Versions.KOTLIN}"
     const val APP_COMPAT = "androidx.appcompat:appcompat:${Versions.APP_COMPAT}"
-    const val KOTLIN_COROUTINES = "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.COROUTINES}"
+    const val KOTLIN_COROUTINES =
+        "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.COROUTINES}"
     const val JUNIT = "junit:junit:${Versions.JUNIT}"
     const val ROBOLECTRIC = "org.robolectric:robolectric:${Versions.ROBOLECTRIC}"
     const val MOCKITO = "org.mockito:mockito-core:${Versions.MOCKITO}"

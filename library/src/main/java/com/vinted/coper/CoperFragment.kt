@@ -9,6 +9,8 @@ import androidx.core.content.PermissionChecker
 import androidx.fragment.app.Fragment
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -16,13 +18,9 @@ internal class CoperFragment : Fragment() {
 
     private val mutex = Mutex()
 
-    private var triggerPermissionRequest: CompletableDeferred<Unit>? = null
-
     // If job is not completed, then it is cancelled, when changed
     private var permissionRequestState: PermissionRequestState? = null
         set(value) {
-            if (value != null) triggerPermissionRequest?.complete(Unit)
-            triggerPermissionRequest = null
             if (field?.deferred?.isCompleted == false) {
                 val requestedPermissions = value?.permissions?.joinToString(", ")
                 val currentPermissions = field?.permissions?.joinToString(", ")
@@ -33,7 +31,13 @@ internal class CoperFragment : Fragment() {
                 )
             }
             field = value
+            _permissionRequestStateFlow.value = value
         }
+
+    private val _permissionRequestStateFlow = MutableStateFlow(permissionRequestState)
+
+    @VisibleForTesting
+    internal val permissionRequestStateFlow = _permissionRequestStateFlow.asStateFlow()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,12 +51,6 @@ internal class CoperFragment : Fragment() {
         if (mutex.isLocked && !permissionRequest.deferred.isCompleted) {
             requestPermissions(permissionRequest.permissions.toTypedArray(), REQUEST_CODE)
         }
-    }
-
-    @VisibleForTesting
-    internal suspend fun waitUntilRequestStart() {
-        triggerPermissionRequest = CompletableDeferred()
-        triggerPermissionRequest?.await()
     }
 
     internal fun isPermissionsGranted(permissions: Array<out String>): Boolean {
@@ -218,7 +216,7 @@ internal class CoperFragment : Fragment() {
             .map { it.permission }
     }
 
-    private sealed class PermissionCheckResult {
+    internal sealed class PermissionCheckResult {
         data class Granted(val permission: String) : PermissionCheckResult()
         data class Denied(val permission: String) : PermissionCheckResult()
 
@@ -238,7 +236,7 @@ internal class CoperFragment : Fragment() {
         }
     }
 
-    private data class PermissionRequestState(
+    internal data class PermissionRequestState(
         val permissions: List<String>,
         val deferred: CompletableDeferred<List<PermissionCheckResult>>
     )

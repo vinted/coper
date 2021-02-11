@@ -8,6 +8,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.nhaarman.mockitokotlin2.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -492,7 +494,7 @@ class CoperImplTest {
             val job = async {
                 fixture.request(permission)
             }
-            fragment.waitUntilRequestStart()
+            fragment.permissionRequestStateFlow.filterNotNull().first()
             activityController.destroy()
             job.await()
         }
@@ -509,7 +511,7 @@ class CoperImplTest {
             val job = async {
                 fixture.request(permission)
             }
-            fixture.getFragmentSafely().waitUntilRequestStart()
+            fragment.permissionRequestStateFlow.filterNotNull().first()
             activity.recreate()
             fragment.onRequestPermissionResult(
                 permissions = listOf(permission),
@@ -575,7 +577,7 @@ class CoperImplTest {
             val responseAsync = async {
                 fixture.request(permission)
             }
-            fragment.waitUntilRequestStart()
+            fragment.permissionRequestStateFlow.filterNotNull().first()
             fragment.onResume()
 
             verify(fragment, times(2)).requestPermissions(anyArray(), anyOrNull())
@@ -681,7 +683,7 @@ class CoperImplTest {
             val responseAsync = async {
                 fixture.request("test")
             }
-            fixture.getFragmentSafely().waitUntilRequestStart()
+            fixture.getFragmentSafely().permissionRequestStateFlow.filterNotNull().first()
 
             val isPending = fixture.isRequestPendingSafe()
 
