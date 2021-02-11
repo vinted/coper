@@ -416,6 +416,26 @@ class CoperImplTest {
     }
 
     @Test
+    fun getFragment_lifecycleAlreadyAfterCreated_fragmentTransactionMade() {
+        runBlocking {
+            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+            val activity = activityController.setup().pause().get()
+            val fragmentManager = spy(activity.supportFragmentManager)
+            whenever(activity.supportFragmentManager).thenReturn(fragmentManager)
+            val fixture = getCoperInstance(
+                lifecycle = activity.lifecycle,
+                fragmentManager = fragmentManager
+            )
+
+            withTimeout(1000) {
+                fixture.getFragmentSafely()
+            }
+
+            verify(fragmentManager, times(1)).beginTransaction()
+        }
+    }
+
+    @Test
     fun request_onIoThread_shouldNotCrash() {
         runBlocking {
             val fixture = spy(getCoperInstance())
