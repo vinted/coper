@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.nhaarman.mockitokotlin2.*
+import com.vinted.coper.CoperImpl.Companion.FRAGMENT_TAG
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -422,18 +423,16 @@ class CoperImplTest {
         runBlocking {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
             val activity = spy(activityController.setup().pause().get())
-            val fragmentManager = spy(activity.supportFragmentManager)
-            whenever(activity.supportFragmentManager).thenReturn(fragmentManager)
             val fixture = getCoperInstance(
                 lifecycle = activity.lifecycle,
-                fragmentManager = fragmentManager
+                fragmentManager = activity.supportFragmentManager
             )
 
-            withTimeout(1000) {
+            val fragment = withTimeout(1000) {
                 fixture.getFragmentSafely()
             }
 
-            verify(fragmentManager, times(1)).beginTransaction()
+            assertEquals(fragment, activity.supportFragmentManager.findFragmentByTag(FRAGMENT_TAG))
         }
     }
 
