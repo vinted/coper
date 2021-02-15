@@ -1,10 +1,12 @@
 package com.vinted.coper
 
+import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,6 +19,9 @@ internal class CoperImpl(
 ) : Coper {
 
     private val fragmentInitializationMutex = Mutex()
+
+    @VisibleForTesting
+    internal val fragmentTransactionFlow = MutableStateFlow<CoperFragment?>(null)
 
     override suspend fun withPermissions(
         vararg permissions: String,
@@ -105,6 +110,7 @@ internal class CoperImpl(
                     continuation.resume(this)
                 }
                 .commit()
+            fragmentTransactionFlow.value = this
         }
     }
 

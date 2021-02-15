@@ -1,6 +1,7 @@
 package com.vinted.coper
 
 import android.content.pm.PackageManager
+import android.os.Looper.getMainLooper
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
@@ -12,7 +13,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.eq
@@ -384,37 +384,30 @@ class CoperImplTest {
     }
 
     @Test
-    @Ignore(
-        """
-        Need better solution, because fragment manager could only do transaction on main thread,
-        but when main thread is already in used by test, so fragment transaction queue never starts
-        its work, so if fragment is already in backstack check never be successful
-    """
-    )
-    fun getFragment_manyRequestAsync_oneCheckForLifecycle() {
+    fun getFragment_manyRequestAsync_onlyOneFragmentCreated() {
         runBlocking {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity: FragmentActivity = spy(activityController.setup().get())
-            val fragmentManager = spy(activity.supportFragmentManager)
-            whenever(activity.supportFragmentManager).thenReturn(fragmentManager)
+            val activity: FragmentActivity = activityController.setup().get()
+            val fragmentManager = activity.supportFragmentManager
             val fixture = getCoperInstance(
-                lifecycle = null,
+                lifecycle = activity.lifecycle,
                 fragmentManager = fragmentManager
             )
             val fragmentPromises = mutableListOf<Deferred<CoperFragment?>>()
 
             repeat(10) {
-                fragmentPromises.add(async(Dispatchers.Default) {
+                fragmentPromises.add(async(Dispatchers.IO) {
                     runCatching {
-                        withTimeout(100) {
-                            fixture.getFragmentSafely()
-                        }
+                        fixture.getFragmentSafely()
                     }.getOrNull()
                 })
             }
 
-            fragmentPromises.awaitAll()
-            verify(fragmentManager, times(1)).beginTransaction()
+            fixture.fragmentTransactionFlow.filterNotNull().first()
+            shadowOf(getMainLooper()).idle()
+            val fragments = fragmentPromises.awaitAll().toSet()
+            assertEquals(1, fragments.size)
+            assertEquals(fragments.first(), fragmentManager.findFragmentByTag(FRAGMENT_TAG))
         }
     }
 
