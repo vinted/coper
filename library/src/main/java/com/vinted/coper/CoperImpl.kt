@@ -7,6 +7,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,8 +21,9 @@ internal class CoperImpl(
 
     private val fragmentInitializationMutex = Mutex()
 
+    private val _latestCommittedFragmentFlow = MutableStateFlow<CoperFragment?>(null)
     @VisibleForTesting
-    internal val fragmentTransactionFlow = MutableStateFlow<CoperFragment?>(null)
+    internal val latestCommittedFragmentFlow = _latestCommittedFragmentFlow.asStateFlow()
 
     override suspend fun withPermissions(
         vararg permissions: String,
@@ -110,7 +112,7 @@ internal class CoperImpl(
                     continuation.resume(this)
                 }
                 .commit()
-            fragmentTransactionFlow.value = this
+            _latestCommittedFragmentFlow.value = this
         }
     }
 

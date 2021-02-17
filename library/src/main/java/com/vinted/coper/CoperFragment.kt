@@ -35,7 +35,6 @@ internal class CoperFragment : Fragment() {
         }
 
     private val _permissionRequestStateFlow = MutableStateFlow(permissionRequestState)
-
     @VisibleForTesting
     internal val permissionRequestStateFlow = _permissionRequestStateFlow.asStateFlow()
 

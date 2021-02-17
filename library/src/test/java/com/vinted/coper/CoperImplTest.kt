@@ -403,7 +403,7 @@ class CoperImplTest {
                 })
             }
 
-            fixture.fragmentTransactionFlow.filterNotNull().first()
+            fixture.latestCommittedFragmentFlow.filterNotNull().first()
             shadowOf(getMainLooper()).idle()
             val fragments = fragmentPromises.awaitAll().toSet()
             assertEquals(1, fragments.size)
