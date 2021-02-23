@@ -1,10 +1,17 @@
 package com.vinted.coper
 
 import android.content.pm.PackageManager
+import android.os.Looper.getMainLooper
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import com.nhaarman.mockitokotlin2.*
+import com.vinted.coper.CoperImpl.Companion.FRAGMENT_TAG
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +25,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
+@ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [23, 27])
 class CoperImplTest {
@@ -25,11 +33,10 @@ class CoperImplTest {
     private val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
     private val activity: FragmentActivity = spy(activityController.setup().get())
     private val shadowActivity = shadowOf(activity)
-    private val fixture: CoperImpl = spy(CoperImpl(activity.supportFragmentManager))
+    private val fixture: CoperImpl = spy(getCoperInstance())
 
     @Before
     fun setup() = runBlocking {
-        whenever(fixture.isTestDispatcher).thenReturn(true)
         fixture.mockGetFragmentWithStub()
         mockCheckPermissions("test", PackageManager.PERMISSION_GRANTED)
     }
@@ -292,14 +299,12 @@ class CoperImplTest {
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
-            delay(1)
             val response2Job = async {
                 executePermissionRequest(
                     permissions = listOf(secondPermission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
-            delay(100)
             val response1 = response1Job.await()
             val response2 = response2Job.await()
 
@@ -314,11 +319,9 @@ class CoperImplTest {
         runBlocking {
             val firstPermission = "first"
             val secondPermission = "second"
-            val firstCoperReference = spy(CoperImpl(activity.supportFragmentManager))
-            whenever(firstCoperReference.isTestDispatcher).thenReturn(true)
+            val firstCoperReference = spy(getCoperInstance())
             firstCoperReference.mockGetFragmentWithStub()
-            val secondCoperReference = spy(CoperImpl(activity.supportFragmentManager))
-            whenever(secondCoperReference.isTestDispatcher).thenReturn(true)
+            val secondCoperReference = spy(getCoperInstance())
             secondCoperReference.mockGetFragmentWithStub()
             mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
@@ -330,7 +333,6 @@ class CoperImplTest {
                     coperImplReference = firstCoperReference
                 )
             }
-            delay(1)
             val response2Job = async {
                 executePermissionRequest(
                     permissions = listOf(secondPermission),
@@ -338,7 +340,6 @@ class CoperImplTest {
                     coperImplReference = secondCoperReference
                 )
             }
-            delay(100)
             val response1 = response1Job.await()
             val response2 = response2Job.await()
 
@@ -374,25 +375,73 @@ class CoperImplTest {
     @Test
     fun getFragment_twoRequest_sameInstance() {
         runBlocking {
-            val fixture = CoperImpl(activity.supportFragmentManager)
-            val firstFragment = fixture.getFragment()
-            val secondFragment = fixture.getFragment()
+            val fixture = getCoperInstance()
+            val firstFragment = fixture.getFragmentSafely()
+            val secondFragment = fixture.getFragmentSafely()
 
             assertTrue { firstFragment === secondFragment }
         }
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun request_onIoThread_shouldCrash() {
-        val fixture = spy(CoperImpl(activity.supportFragmentManager))
-        fixture.mockGetFragmentWithStub()
-
-        runBlocking(Dispatchers.IO) {
-            executePermissionRequest(
-                coperImplReference = fixture,
-                permissions = listOf("test"),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+    @Test
+    fun getFragment_manyRequestAsync_onlyOneFragmentCreated() {
+        runBlocking {
+            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+            val activity: FragmentActivity = activityController.setup().get()
+            val fragmentManager = activity.supportFragmentManager
+            val fixture = getCoperInstance(
+                lifecycle = activity.lifecycle,
+                fragmentManager = fragmentManager
             )
+            val fragmentPromises = mutableListOf<Deferred<CoperFragment?>>()
+
+            repeat(10) {
+                fragmentPromises.add(async(Dispatchers.IO) {
+                    runCatching {
+                        fixture.getFragmentSafely()
+                    }.getOrNull()
+                })
+            }
+
+            fixture.latestCommittedFragmentFlow.filterNotNull().first()
+            shadowOf(getMainLooper()).idle()
+            val fragments = fragmentPromises.awaitAll().toSet()
+            assertEquals(1, fragments.size)
+            assertEquals(fragments.first(), fragmentManager.findFragmentByTag(FRAGMENT_TAG))
+        }
+    }
+
+    @Test
+    fun getFragment_lifecycleAlreadyAfterCreated_fragmentTransactionMade() {
+        runBlocking {
+            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+            val activity = spy(activityController.setup().pause().get())
+            val fixture = getCoperInstance(
+                lifecycle = activity.lifecycle,
+                fragmentManager = activity.supportFragmentManager
+            )
+
+            val fragment = withTimeout(1000) {
+                fixture.getFragmentSafely()
+            }
+
+            assertEquals(fragment, activity.supportFragmentManager.findFragmentByTag(FRAGMENT_TAG))
+        }
+    }
+
+    @Test
+    fun request_onIoThread_shouldNotCrash() {
+        runBlocking {
+            val fixture = spy(getCoperInstance())
+            fixture.mockGetFragmentWithStub()
+
+            withContext(Dispatchers.IO) {
+                executePermissionRequest(
+                    coperImplReference = fixture,
+                    permissions = listOf("test"),
+                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+                )
+            }
         }
     }
 
@@ -419,20 +468,26 @@ class CoperImplTest {
         }
     }
 
-    @Test(expected = PermissionRequestCancelException::class, timeout = 1000)
+    @Test(expected = PermissionRequestCancelException::class)
     fun request_onDestroy_throwCancelException() {
-        val permission = "onDestroy"
-        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
-
         runBlocking {
+            val permission = "onDestroy"
+
+            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+            val activity = activityController.setup().get()
+
+            val fixture = getCoperInstance(
+                fragmentManager = activity.supportFragmentManager,
+                lifecycle = activity.lifecycle,
+            )
+
+            val fragment = fixture.getFragmentSafely()
+
             val job = async {
                 fixture.request(permission)
             }
-            delay(5)
-            activity.supportFragmentManager
-                .beginTransaction()
-                .remove(fixture.getFragment())
-                .commitNow()
+            fragment.permissionRequestStateFlow.filterNotNull().first()
+            activityController.destroy()
             job.await()
         }
     }
@@ -440,16 +495,15 @@ class CoperImplTest {
     @Test
     fun request_onConfigurationChange_requestDone() {
         runBlocking {
-            val fixture = spy(CoperImpl(activity.supportFragmentManager))
-            whenever(fixture.isTestDispatcher).thenReturn(true)
-            val fragment = fixture.getFragment()
+            val fixture = spy(getCoperInstance())
+            val fragment = fixture.getFragmentSafely()
             val permission = "onConfigurationChange"
             shadowActivity.denyPermissions(permission)
 
             val job = async {
                 fixture.request(permission)
             }
-            delay(5)
+            fragment.permissionRequestStateFlow.filterNotNull().first()
             activity.recreate()
             fragment.onRequestPermissionResult(
                 permissions = listOf(permission),
@@ -484,7 +538,7 @@ class CoperImplTest {
     fun request_permissionResultCameWithDifferentPermissions_jobIsNotCompleted() = runBlocking {
         val permission = "permission"
         mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
-        val fragment = fixture.getFragment()
+        val fragment = fixture.getFragmentSafely()
         whenever(
             fragment.requestPermissions(
                 eq(listOf(permission).toTypedArray()),
@@ -509,13 +563,13 @@ class CoperImplTest {
     fun request_onResumeCalledDuringRequest_permissionRequestStarted() {
         runBlocking {
             val permission = "onResume"
-            val fragment = fixture.getFragment()
+            val fragment = fixture.getFragmentSafely()
             mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
 
             val responseAsync = async {
                 fixture.request(permission)
             }
-            delay(5)
+            fragment.permissionRequestStateFlow.filterNotNull().first()
             fragment.onResume()
 
             verify(fragment, times(2)).requestPermissions(anyArray(), anyOrNull())
@@ -534,7 +588,6 @@ class CoperImplTest {
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
-            delay(5)
             val responseAsync2 = async {
                 executePermissionRequest(
                     permissions = listOf(permission),
@@ -563,7 +616,6 @@ class CoperImplTest {
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
-            delay(5)
             val responseAsync2 = async {
                 executePermissionRequest(
                     permissions = listOf(secondPermission),
@@ -585,7 +637,7 @@ class CoperImplTest {
             val secondPermission = "secondPermission"
             mockCheckPermissions(firstPermission, PermissionChecker.PERMISSION_DENIED)
             mockCheckPermissions(secondPermission, PermissionChecker.PERMISSION_DENIED)
-            val coperFragment = fixture.getFragment()
+            val coperFragment = fixture.getFragmentSafely()
             whenever(
                 coperFragment.requestPermissions(
                     eq(arrayOf(firstPermission, secondPermission)),
@@ -609,9 +661,11 @@ class CoperImplTest {
 
     @Test
     fun isRequestPending_requestNotPending_returnsFalse() {
-        val isPending = fixture.isRequestPending()
+        runBlocking {
+            val isPending = fixture.isRequestPendingSafe()
 
-        assertFalse(isPending)
+            assertFalse(isPending)
+        }
     }
 
     @Test
@@ -621,9 +675,9 @@ class CoperImplTest {
             val responseAsync = async {
                 fixture.request("test")
             }
-            delay(5)
+            fixture.getFragmentSafely().permissionRequestStateFlow.filterNotNull().first()
 
-            val isPending = fixture.isRequestPending()
+            val isPending = fixture.isRequestPendingSafe()
 
             assertTrue(isPending)
             responseAsync.cancel()
@@ -633,31 +687,37 @@ class CoperImplTest {
     @Test
     @Config(sdk = [21, 23, 27])
     fun isPermissionsGranted_permissionsNotGranted_returnsFalse() {
-        mockCheckPermissions("not_granted", PermissionChecker.PERMISSION_DENIED)
+        runBlocking {
+            mockCheckPermissions("not_granted", PermissionChecker.PERMISSION_DENIED)
 
-        val isGranted = fixture.isPermissionsGranted("not_granted")
+            val isGranted = fixture.isPermissionsGrantedSafe("not_granted")
 
-        assertFalse(isGranted)
+            assertFalse(isGranted)
+        }
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
     fun isPermissionsGranted_permissionsNotGrantedByOp_returnsFalse() {
-        mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
+        runBlocking {
+            mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
 
-        val isGranted = fixture.isPermissionsGranted("not_granted_op")
+            val isGranted = fixture.isPermissionsGrantedSafe("not_granted_op")
 
-        assertFalse(isGranted)
+            assertFalse(isGranted)
+        }
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
     fun isPermissionsGranted_permissionsGranted_returnsTrue() {
-        mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
+        runBlocking {
+            mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
 
-        val isGranted = fixture.isPermissionsGranted("granted")
+            val isGranted = fixture.isPermissionsGrantedSafe("granted")
 
-        assertTrue(isGranted)
+            assertTrue(isGranted)
+        }
     }
 
     @Test
@@ -686,6 +746,32 @@ class CoperImplTest {
         }
     }
 
+    @Test(expected = TimeoutCancellationException::class)
+    fun getFragmentSafely_lifecycleNotReady_crashWithTimeout() {
+        runBlocking {
+            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+            val activity = activityController.get()
+
+            val fixture = getCoperInstance(
+                fragmentManager = activity.supportFragmentManager,
+                lifecycle = activity.lifecycle,
+            )
+
+            withTimeout(100) {
+                fixture.getFragmentSafely()
+            }
+        }
+    }
+
+    @Test
+    @Config(sdk = [21, 23, 27])
+    fun request_runOnPausingDispatcher_responseIsSuccessful() = runBlocking {
+        val isCancelled = fixture.getFragmentSafely().lifecycleScope.launchWhenCreated {
+            fixture.request("test")
+        }.isCancelled
+        assertFalse(isCancelled)
+    }
+
     private suspend fun executePermissionRequest(
         permissions: List<String>,
         permissionResult: List<Int>,
@@ -693,7 +779,7 @@ class CoperImplTest {
     ): PermissionResult {
         return coroutineScope {
             stubRequestPermission(
-                coperFragment = coperImplReference.getFragment(),
+                coperFragment = coperImplReference.getFragmentSafely(),
                 permissions = permissions,
                 permissionResults = permissionResult
             )
@@ -709,7 +795,7 @@ class CoperImplTest {
     ) {
         coroutineScope {
             stubRequestPermission(
-                coperFragment = coperImplReference.getFragment(),
+                coperFragment = coperImplReference.getFragmentSafely(),
                 permissions = permissions,
                 permissionResults = permissionResult
             )
@@ -742,9 +828,17 @@ class CoperImplTest {
             .thenReturn(result)
     }
 
-    private fun CoperImpl.mockGetFragmentWithStub() {
-        val coperFragment = spy(this.getFragment())
-        whenever(coperFragment.activity).thenReturn(activity)
-        whenever(this.getFragment()).thenReturn(coperFragment)
+    private fun getCoperInstance(
+        fragmentManager: FragmentManager = activity.supportFragmentManager,
+        lifecycle: Lifecycle? = activity.lifecycle,
+    ): CoperImpl {
+        return CoperImpl(fragmentManager, lifecycle)
+    }
+
+    private suspend fun CoperImpl.mockGetFragmentWithStub() {
+        val coperFragment = spy(this.getFragmentSafely())
+        whenever(coperFragment.activity).doReturn(activity)
+        whenever(this.getFragmentSafely()).doReturn(coperFragment)
+        whenever(this.getFragment()).doReturn(coperFragment)
     }
 }

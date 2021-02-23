@@ -7,18 +7,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.vinted.coper.CoperBuilder
 import com.vinted.coper.PermissionResult
 import kotlinx.android.synthetic.main.fragment_permission_example_in_ui.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 class PermissionExampleInUIFragment : Fragment() {
 
     private val coper by lazy {
         CoperBuilder()
-            .setFragmentManager(parentFragmentManager)
+            .setFragmentActivity(requireActivity())
             .build()
     }
 
@@ -45,14 +43,14 @@ class PermissionExampleInUIFragment : Fragment() {
     }
 
     private fun onOnePermissionClicked() {
-        GlobalScope.launch(Dispatchers.Main) {
+        viewLifecycleOwner.lifecycleScope.launchWhenCreated {
             val result = coper.request(Manifest.permission.ACCESS_FINE_LOCATION)
             onPermissionResult(result)
         }
     }
 
     private fun onTwoPermissionsClickedWithOneRequest() {
-        GlobalScope.launch(Dispatchers.Main) {
+        viewLifecycleOwner.lifecycleScope.launchWhenCreated {
             coper.request(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.CAMERA
@@ -65,7 +63,7 @@ class PermissionExampleInUIFragment : Fragment() {
     }
 
     private fun onTwoPermissionsClickedWithTwoRequests() {
-        GlobalScope.launch(Dispatchers.Main) {
+        viewLifecycleOwner.lifecycleScope.launchWhenCreated {
             val firstPermissionResult = coper.request(Manifest.permission.ACCESS_FINE_LOCATION)
             val secondPermissionResult = coper.request(Manifest.permission.CAMERA)
             onPermissionResult(firstPermissionResult)

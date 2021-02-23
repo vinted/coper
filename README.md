@@ -25,7 +25,7 @@ dependencies {
 ### Api
 ```
 val coper: Coper = CoperBuilder()
-    .setFragmentManager(fragmentManager)
+    .setFragmentActivity(activity)
     .build()
 ```
 ###### Note:
@@ -113,12 +113,12 @@ If permission will not be granted, then request crash with `PermissionsRequestFa
 ##### Additional functionality:
 ###### Request pending check:
 ```
-coper.isRequestPending()
+coper.isRequestPendingSafe()
 ```
 ###### Granted permissions check:
 ```
 // Returns true if all permissions granted
-coper.isPermissionsGranted(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION) 
+coper.isPermissionsGrantedSafe(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 ```
 ### Cancelation
 If you cancel job, request will be left until user will submit, but client will not get response.

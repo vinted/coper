@@ -1,16 +1,29 @@
 package com.vinted.coper
 
+import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.FragmentManager
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.coroutineScope
-import kotlin.coroutines.ContinuationInterceptor
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.coroutines.resume
 
 
-internal class CoperImpl(private val fragmentManager: FragmentManager) : Coper {
+internal class CoperImpl(
+    private val fragmentManager: FragmentManager,
+    private val lifecycle: Lifecycle?,
+) : Coper {
 
-    // Created because coroutines in tests are run on `BlockingEventLoop` or
-    // `TestCoroutineDispatcher` dispatchers
-    internal val isTestDispatcher = false
+    private val fragmentInitializationMutex = Mutex()
+
+    private val _latestCommittedFragmentFlow = MutableStateFlow<CoperFragment?>(null)
+    @VisibleForTesting
+    internal val latestCommittedFragmentFlow = _latestCommittedFragmentFlow.asStateFlow()
 
     override suspend fun withPermissions(
         vararg permissions: String,
@@ -31,10 +44,15 @@ internal class CoperImpl(private val fragmentManager: FragmentManager) : Coper {
 
     private suspend fun requestPermissions(permissions: Array<out String>) = coroutineScope {
         check(permissions.isNotEmpty()) { "Cant request 0 permissions" }
-        check(isTestDispatcher || coroutineContext[ContinuationInterceptor] == Dispatchers.Main) {
-            "Request handled on ${coroutineContext[ContinuationInterceptor]}, should be done on main dispatcher"
-        }
-        getFragment().requestPermission(permissions)
+        getFragmentSafely().requestPermission(permissions)
+    }
+
+    override suspend fun isRequestPendingSafe(): Boolean {
+        return getFragmentSafely().isRequestPending()
+    }
+
+    override suspend fun isPermissionsGrantedSafe(vararg permissions: String): Boolean {
+        return getFragmentSafely().isPermissionsGranted(permissions)
     }
 
     override fun isRequestPending(): Boolean {
@@ -46,6 +64,7 @@ internal class CoperImpl(private val fragmentManager: FragmentManager) : Coper {
     }
 
     @Synchronized
+    @Deprecated("Use getFragmentSafely")
     internal fun getFragment(): CoperFragment {
         val fragment = fragmentManager.findFragmentByTag(FRAGMENT_TAG) as? CoperFragment
         return if (fragment == null) {
@@ -56,6 +75,55 @@ internal class CoperImpl(private val fragmentManager: FragmentManager) : Coper {
             newFragment
         } else {
             fragment
+        }
+    }
+
+    internal suspend fun getFragmentSafely(): CoperFragment {
+        val fragment = getAttachedFragment()
+        fragment.lifecycle.waitOnCreate()
+        return fragment
+    }
+
+    private suspend fun getAttachedFragment(): CoperFragment {
+        return fragmentInitializationMutex.withLock {
+            val fragment = fragmentManager
+                .findFragmentByTag(FRAGMENT_TAG) as? CoperFragment
+            if (fragment == null) {
+                val newFragment = CoperFragment()
+                if (lifecycle != null) {
+                    lifecycle.waitOnCreate()
+                    newFragment.attachTo(fragmentManager)
+                } else {
+                    newFragment.attachTo(fragmentManager)
+                }
+            } else {
+                fragment
+            }
+        }
+    }
+
+    private suspend fun CoperFragment.attachTo(
+        fragmentManager: FragmentManager
+    ): CoperFragment {
+        return suspendCancellableCoroutine { continuation ->
+            fragmentManager.beginTransaction()
+                .add(this, FRAGMENT_TAG)
+                .runOnCommit {
+                    continuation.resume(this)
+                }
+                .commit()
+            _latestCommittedFragmentFlow.value = this
+        }
+    }
+
+    private suspend fun Lifecycle.waitOnCreate() {
+        return suspendCancellableCoroutine {
+            addObserver(object : DefaultLifecycleObserver {
+                override fun onCreate(owner: LifecycleOwner) {
+                    this@waitOnCreate.removeObserver(this)
+                    it.resume(Unit)
+                }
+            })
         }
     }
 
