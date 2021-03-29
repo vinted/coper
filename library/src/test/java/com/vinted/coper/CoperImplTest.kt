@@ -30,10 +30,9 @@ import kotlin.test.assertTrue
 @Config(manifest = Config.NONE, sdk = [23, 27])
 class CoperImplTest {
 
-    private val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-    private val activity: FragmentActivity = spy(activityController.setup().get())
-    private val shadowActivity = shadowOf(activity)
-    private val fixture: CoperImpl = spy(getCoperInstance())
+    private val activityController = Robolectric.buildActivity(CoperTestActivity::class.java)
+    private val activity = activityController.setup().get()
+    private val fixture: CoperImpl = getCoperInstance()
 
     @Before
     fun setup() = runBlocking {
@@ -98,7 +97,10 @@ class CoperImplTest {
         runBlocking {
             val permissionName = "denied"
             mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
-            whenever(activity.shouldShowRequestPermissionRationale(permissionName)).thenReturn(true)
+            activity.setShouldShowRequestPermissionRationale(
+                permission = permissionName,
+                rationale = true
+            )
 
             val response = executePermissionRequest(
                 listOf(permissionName),
@@ -116,7 +118,10 @@ class CoperImplTest {
         runBlocking {
             val permissionName = "denied_perm"
             mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
-            whenever(activity.shouldShowRequestPermissionRationale(permissionName)).thenReturn(false)
+            activity.setShouldShowRequestPermissionRationale(
+                permission = permissionName,
+                rationale = false
+            )
 
             val response = executePermissionRequest(
                 permissions = listOf(permissionName),
@@ -135,12 +140,14 @@ class CoperImplTest {
             val permissionPermanently = "denied_perm"
             val permissionRationale = "denied_rat"
             mockCheckPermissions(permissionPermanently, PackageManager.PERMISSION_DENIED)
-            whenever(activity.shouldShowRequestPermissionRationale(permissionPermanently)).thenReturn(
-                false
+            activity.setShouldShowRequestPermissionRationale(
+                permission = permissionPermanently,
+                rationale = false
             )
             mockCheckPermissions(permissionRationale, PackageManager.PERMISSION_DENIED)
-            whenever(activity.shouldShowRequestPermissionRationale(permissionRationale)).thenReturn(
-                true
+            activity.setShouldShowRequestPermissionRationale(
+                permission = permissionRationale,
+                rationale = true
             )
 
             val response = executePermissionRequest(
@@ -261,8 +268,14 @@ class CoperImplTest {
         runBlocking {
             val firstPermission = "first"
             val secondPermission = "second"
-            whenever(activity.shouldShowRequestPermissionRationale("first")).thenReturn(false)
-            whenever(activity.shouldShowRequestPermissionRationale("second")).thenReturn(true)
+            activity.setShouldShowRequestPermissionRationale(
+                permission = firstPermission,
+                rationale = false
+            )
+            activity.setShouldShowRequestPermissionRationale(
+                permission = secondPermission,
+                rationale = true
+            )
             mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
 
@@ -319,9 +332,9 @@ class CoperImplTest {
         runBlocking {
             val firstPermission = "first"
             val secondPermission = "second"
-            val firstCoperReference = spy(getCoperInstance())
+            val firstCoperReference = getCoperInstance()
             firstCoperReference.mockGetFragmentWithStub()
-            val secondCoperReference = spy(getCoperInstance())
+            val secondCoperReference = getCoperInstance()
             secondCoperReference.mockGetFragmentWithStub()
             mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
@@ -415,7 +428,7 @@ class CoperImplTest {
     fun getFragment_lifecycleAlreadyAfterCreated_fragmentTransactionMade() {
         runBlocking {
             val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity = spy(activityController.setup().pause().get())
+            val activity = activityController.setup().pause().get()
             val fixture = getCoperInstance(
                 lifecycle = activity.lifecycle,
                 fragmentManager = activity.supportFragmentManager
@@ -432,7 +445,7 @@ class CoperImplTest {
     @Test
     fun request_onIoThread_shouldNotCrash() {
         runBlocking {
-            val fixture = spy(getCoperInstance())
+            val fixture = getCoperInstance()
             fixture.mockGetFragmentWithStub()
 
             withContext(Dispatchers.IO) {
@@ -495,10 +508,16 @@ class CoperImplTest {
     @Test
     fun request_onConfigurationChange_requestDone() {
         runBlocking {
-            val fixture = spy(getCoperInstance())
+            val activityController = Robolectric.buildActivity(CoperTestActivity::class.java)
+            val activity = activityController.setup().get()
+            val fragmentManager = activity.supportFragmentManager
+            val fixture = getCoperInstance(
+                lifecycle = activity.lifecycle,
+                fragmentManager = fragmentManager
+            )
             val fragment = fixture.getFragmentSafely()
             val permission = "onConfigurationChange"
-            shadowActivity.denyPermissions(permission)
+            activity.setPermissionResult(permission, PackageManager.PERMISSION_DENIED)
 
             val job = async {
                 fixture.request(permission)
@@ -824,8 +843,7 @@ class CoperImplTest {
     }
 
     private fun mockCheckPermissions(permission: String, result: Int) {
-        whenever(activity.checkPermission(eq(permission), anyOrNull(), anyOrNull()))
-            .thenReturn(result)
+        activity.setPermissionResult(permission, result)
     }
 
     private fun getCoperInstance(
@@ -836,9 +854,11 @@ class CoperImplTest {
     }
 
     private suspend fun CoperImpl.mockGetFragmentWithStub() {
-        val coperFragment = spy(this.getFragmentSafely())
-        whenever(coperFragment.activity).doReturn(activity)
-        whenever(this.getFragmentSafely()).doReturn(coperFragment)
-        whenever(this.getFragment()).doReturn(coperFragment)
+        val coperFragment = getFragmentSafely()
+        val spyCoperFragment = spy(coperFragment)
+        // This is needed because spy creates new instance and stubbing needs exact reference
+        coperFragment.requireActivity().supportFragmentManager.beginTransaction()
+            .add(spyCoperFragment, FRAGMENT_TAG)
+            .commitNow()
     }
 }
