@@ -1,9 +1,13 @@
+import Versions.VERSION_NAME
+
 plugins {
     id("com.android.library")
-    id("com.github.dcendents.android-maven")
+    id("maven-publish")
     kotlin("android")
     kotlin("android.extensions")
 }
+
+group = "com.github.vinted"
 
 android {
     compileSdkVersion(Versions.COMPILE_SDK_VERSION)
@@ -15,7 +19,19 @@ android {
     buildTypes {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xopt-in=kotlin.contracts.ExperimentalContracts")
+        }
+    }
+}
 
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                groupId = "$group"
+                artifactId = "coper"
+                version = VERSION_NAME
+                from(components["release"])
+            }
         }
     }
 }
@@ -29,7 +45,7 @@ tasks {
 
     val javaDoc by creating(Javadoc::class) {
         isFailOnError = false
-        source = main.java.sourceFiles
+        source = main.java.getSourceFiles()
         classpath += project.files(android.bootClasspath.joinToString(File.pathSeparator))
     }
 
