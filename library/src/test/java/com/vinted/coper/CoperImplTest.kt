@@ -7,7 +7,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import com.nhaarman.mockitokotlin2.*
 import com.vinted.coper.CoperImpl.Companion.FRAGMENT_TAG
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
@@ -15,7 +14,10 @@ import kotlinx.coroutines.flow.first
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.eq
+import org.mockito.Mockito.*
+import org.mockito.kotlin.anyArray
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
