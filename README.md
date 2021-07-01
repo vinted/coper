@@ -18,7 +18,7 @@ allprojects {
 }
 	
 dependencies {
-    implementation 'com.github.vinted:coper:0.3'
+    implementation 'com.vinted:coper:<version>'
 }
 ```
 
