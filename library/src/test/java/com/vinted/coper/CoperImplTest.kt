@@ -136,46 +136,6 @@ class CoperImplTest {
         }
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun request_permissionRequestReturnsEmptyResults_throwException() {
-        runBlocking {
-            val permissionName = "interrupted_permission"
-
-            executePermissionRequest(
-                permissionsToRequest = listOf(permissionName),
-                permissionsInResults = emptyList(),
-                permissionResult = emptyList()
-            )
-        }
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun request_permissionRequestReturnsDifferentPermissions_throwException() {
-        runBlocking {
-            val requestedPermission = "requested_permission"
-            val resultedPermission = "resulted_permission"
-
-            executePermissionRequest(
-                permissionsToRequest = listOf(requestedPermission),
-                permissionsInResults = listOf(requestedPermission),
-                permissionResult = emptyList()
-            )
-        }
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun request_requestCodeIsNotOfCoperFragment_throwException() {
-        runBlocking {
-            val requestedPermission = "requested_permission"
-
-            executePermissionRequest(
-                permissionsToRequest = listOf(requestedPermission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_DENIED),
-                requestCode = 0
-            )
-        }
-    }
-
     @Test
     fun request_permissionsIsDeniedPermanentlyAndOtherRationale_bothPermissionsExist() {
         runBlocking {
@@ -834,6 +794,46 @@ class CoperImplTest {
             fixture.request("test")
         }.isCancelled
         assertFalse(isCancelled)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun request_permissionRequestReturnsEmptyResults_throwException() {
+        runBlocking {
+            val permissionName = "interrupted_permission"
+
+            executePermissionRequest(
+                permissionsToRequest = listOf(permissionName),
+                permissionsInResults = emptyList(),
+                permissionResult = emptyList()
+            )
+        }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun request_permissionRequestReturnsDifferentPermissions_throwException() {
+        runBlocking {
+            val requestedPermission = "requested_permission"
+            val resultedPermission = "resulted_permission"
+
+            executePermissionRequest(
+                permissionsToRequest = listOf(requestedPermission),
+                permissionsInResults = listOf(requestedPermission),
+                permissionResult = emptyList()
+            )
+        }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun request_requestCodeIsNotOfCoperFragment_throwException() {
+        runBlocking {
+            val requestedPermission = "requested_permission"
+
+            executePermissionRequest(
+                permissionsToRequest = listOf(requestedPermission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_DENIED),
+                requestCode = 0
+            )
+        }
     }
 
     private suspend fun executePermissionRequest(
