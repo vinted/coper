@@ -48,7 +48,7 @@ internal class CoperImpl(
     }
 
     override suspend fun isRequestPendingSafe(): Boolean {
-        return getFragmentSafely().isRequestPending()
+//        return getFragmentSafely().isRequestPending()
     }
 
     override suspend fun isPermissionsGrantedSafe(vararg permissions: String): Boolean {
