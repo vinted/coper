@@ -17,3 +17,6 @@ jobs:
 
       - name: Lint
         run: ./gradlew detekt lint
+
+      - name: Test
+        run: ./gradlew test
