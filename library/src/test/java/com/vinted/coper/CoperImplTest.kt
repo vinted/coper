@@ -126,13 +126,53 @@ class CoperImplTest {
             )
 
             val response = executePermissionRequest(
-                permissions = listOf(permissionName),
+                permissionsToRequest = listOf(permissionName),
                 permissionResult = listOf(PermissionChecker.PERMISSION_DENIED)
             )
 
             assertTrue(response is PermissionResult.Denied)
             assertTrue { response.isPermanentlyDenied() }
             assertTrue { response.getDeniedPermanently().isNotEmpty() }
+        }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun request_permissionRequestReturnsEmptyResults_throwException() {
+        runBlocking {
+            val permissionName = "interrupted_permission"
+
+            executePermissionRequest(
+                permissionsToRequest = listOf(permissionName),
+                permissionsInResults = emptyList(),
+                permissionResult = emptyList()
+            )
+        }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun request_permissionRequestReturnsDifferentPermissions_throwException() {
+        runBlocking {
+            val requestedPermission = "requested_permission"
+            val resultedPermission = "resulted_permission"
+
+            executePermissionRequest(
+                permissionsToRequest = listOf(requestedPermission),
+                permissionsInResults = listOf(requestedPermission),
+                permissionResult = emptyList()
+            )
+        }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun request_requestCodeIsNotOfCoperFragment_throwException() {
+        runBlocking {
+            val requestedPermission = "requested_permission"
+
+            executePermissionRequest(
+                permissionsToRequest = listOf(requestedPermission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_DENIED),
+                requestCode = 0
+            )
         }
     }
 
@@ -153,7 +193,7 @@ class CoperImplTest {
             )
 
             val response = executePermissionRequest(
-                permissions = listOf(permissionPermanently, permissionRationale),
+                permissionsToRequest = listOf(permissionPermanently, permissionRationale),
                 permissionResult = listOf(
                     PermissionChecker.PERMISSION_DENIED,
                     PermissionChecker.PERMISSION_DENIED
@@ -185,7 +225,7 @@ class CoperImplTest {
             mockCheckPermissions(permissionGranted, PackageManager.PERMISSION_DENIED)
 
             val response = executePermissionRequest(
-                permissions = listOf(permissionGranted, permissionDenied),
+                permissionsToRequest = listOf(permissionGranted, permissionDenied),
                 permissionResult = listOf(
                     PermissionChecker.PERMISSION_GRANTED,
                     PermissionChecker.PERMISSION_DENIED
@@ -208,7 +248,7 @@ class CoperImplTest {
             mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
 
             val response = executePermissionRequest(
-                permissions = listOf(permissionName),
+                permissionsToRequest = listOf(permissionName),
                 permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
             )
 
@@ -226,7 +266,7 @@ class CoperImplTest {
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
 
             val response = executePermissionRequest(
-                permissions = listOf(
+                permissionsToRequest = listOf(
                     firstPermission,
                     secondPermission
                 ),
@@ -250,7 +290,7 @@ class CoperImplTest {
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
 
             val response = executePermissionRequest(
-                permissions = listOf(
+                permissionsToRequest = listOf(
                     firstPermission,
                     secondPermission
                 ),
@@ -282,7 +322,7 @@ class CoperImplTest {
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
 
             val response = executePermissionRequest(
-                permissions = listOf(
+                permissionsToRequest = listOf(
                     firstPermission,
                     secondPermission
                 ),
@@ -310,13 +350,13 @@ class CoperImplTest {
 
             val response1Job = async {
                 executePermissionRequest(
-                    permissions = listOf(firstPermission),
+                    permissionsToRequest = listOf(firstPermission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
             val response2Job = async {
                 executePermissionRequest(
-                    permissions = listOf(secondPermission),
+                    permissionsToRequest = listOf(secondPermission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
@@ -343,14 +383,14 @@ class CoperImplTest {
 
             val response1Job = async {
                 executePermissionRequest(
-                    permissions = listOf(firstPermission),
+                    permissionsToRequest = listOf(firstPermission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED),
                     coperImplReference = firstCoperReference
                 )
             }
             val response2Job = async {
                 executePermissionRequest(
-                    permissions = listOf(secondPermission),
+                    permissionsToRequest = listOf(secondPermission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED),
                     coperImplReference = secondCoperReference
                 )
@@ -373,11 +413,11 @@ class CoperImplTest {
             mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
 
             val response1 = executePermissionRequest(
-                permissions = listOf(firstPermission),
+                permissionsToRequest = listOf(firstPermission),
                 permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
             )
             val response2 = executePermissionRequest(
-                permissions = listOf(secondPermission),
+                permissionsToRequest = listOf(secondPermission),
                 permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
             )
 
@@ -453,7 +493,7 @@ class CoperImplTest {
             withContext(Dispatchers.IO) {
                 executePermissionRequest(
                     coperImplReference = fixture,
-                    permissions = listOf("test"),
+                    permissionsToRequest = listOf("test"),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
@@ -467,7 +507,7 @@ class CoperImplTest {
 
         runBlocking {
             executePermissionRequest(
-                permissions = emptyList(),
+                permissionsToRequest = emptyList(),
                 permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
             )
         }
@@ -528,7 +568,8 @@ class CoperImplTest {
             activity.recreate()
             fragment.onRequestPermissionResult(
                 permissions = listOf(permission),
-                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED),
+                requestCode = CoperFragment.REQUEST_CODE
             )
             val result = job.await()
 
@@ -568,7 +609,8 @@ class CoperImplTest {
         ).then {
             fragment.onRequestPermissionResult(
                 permissions = listOf("test"),
-                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED),
+                requestCode = CoperFragment.REQUEST_CODE
             )
         }
 
@@ -605,13 +647,13 @@ class CoperImplTest {
             mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
             val responseAsync1 = async {
                 executePermissionRequest(
-                    permissions = listOf(permission),
+                    permissionsToRequest = listOf(permission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
             val responseAsync2 = async {
                 executePermissionRequest(
-                    permissions = listOf(permission),
+                    permissionsToRequest = listOf(permission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
@@ -633,13 +675,13 @@ class CoperImplTest {
 
             val responseAsync1 = async {
                 executePermissionRequest(
-                    permissions = listOf(firstPermission),
+                    permissionsToRequest = listOf(firstPermission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
             val responseAsync2 = async {
                 executePermissionRequest(
-                    permissions = listOf(secondPermission),
+                    permissionsToRequest = listOf(secondPermission),
                     permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                 )
             }
@@ -670,7 +712,8 @@ class CoperImplTest {
                     permissionsResult = listOf(
                         PermissionChecker.PERMISSION_GRANTED,
                         PermissionChecker.PERMISSION_GRANTED
-                    )
+                    ),
+                    requestCode = CoperFragment.REQUEST_CODE
                 )
             }
 
@@ -752,7 +795,7 @@ class CoperImplTest {
 
                 requests.add(async {
                     executePermissionRequest(
-                        permissions = listOf(permission),
+                        permissionsToRequest = listOf(permission),
                         permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
                     )
                 })
@@ -794,17 +837,21 @@ class CoperImplTest {
     }
 
     private suspend fun executePermissionRequest(
-        permissions: List<String>,
+        permissionsToRequest: List<String>,
         permissionResult: List<Int>,
-        coperImplReference: CoperImpl = fixture
+        coperImplReference: CoperImpl = fixture,
+        permissionsInResults: List<String>? = null,
+        requestCode: Int = CoperFragment.REQUEST_CODE,
     ): PermissionResult {
         return coroutineScope {
             stubRequestPermission(
                 coperFragment = coperImplReference.getFragmentSafely(),
-                permissions = permissions,
-                permissionResults = permissionResult
+                permissions = permissionsToRequest,
+                permissionResults = permissionResult,
+                permissionsInResults = permissionsInResults,
+                requestCode = requestCode
             )
-            coperImplReference.request(*permissions.toTypedArray())
+            coperImplReference.request(*permissionsToRequest.toTypedArray())
         }
     }
 
@@ -829,7 +876,9 @@ class CoperImplTest {
     private fun stubRequestPermission(
         coperFragment: CoperFragment,
         permissions: List<String>,
-        permissionResults: List<Int>
+        permissionResults: List<Int>,
+        permissionsInResults: List<String>? = null,
+        requestCode: Int = CoperFragment.REQUEST_CODE
     ) {
         whenever(
             coperFragment.requestPermissions(
@@ -838,8 +887,9 @@ class CoperImplTest {
             )
         ).then {
             coperFragment.onRequestPermissionResult(
-                permissions = permissions,
-                permissionsResult = permissionResults
+                permissions = permissionsInResults ?: permissions,
+                permissionsResult = permissionResults,
+                requestCode = requestCode
             )
         }
     }

@@ -155,6 +155,14 @@ internal class CoperFragment : Fragment() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        onRequestPermissionResult(permissions.toList(), grantResults.toList(), requestCode)
+    }
+
+    internal fun onRequestPermissionResult(
+        permissions: List<String>,
+        permissionsResult: List<Int>,
+        requestCode: Int
+    ) {
         if (requestCode != REQUEST_CODE) {
             val message = "Permissions result came with not Coper request code: $requestCode"
             Log.e(TAG, message)
@@ -163,7 +171,8 @@ internal class CoperFragment : Fragment() {
             )
             return
         }
-        if (permissions.isEmpty() && grantResults.isEmpty()) {
+
+        if (permissions.isEmpty() && permissionsResult.isEmpty()) {
             val message = "Permissions result and permissions came empty"
             Log.i(TAG, message)
             permissionRequestState?.deferred?.completeExceptionally(
@@ -171,13 +180,7 @@ internal class CoperFragment : Fragment() {
             )
             return
         }
-        onRequestPermissionResult(permissions.toList(), grantResults.toList())
-    }
 
-    internal fun onRequestPermissionResult(
-        permissions: List<String>,
-        permissionsResult: List<Int>
-    ) {
         val permissionRequestState = permissionRequestState
         if (permissionRequestState == null) {
             Log.e(TAG, "Something went wrong with permission request state")
@@ -253,6 +256,6 @@ internal class CoperFragment : Fragment() {
 
     companion object {
         private const val TAG = "CoperFragment"
-        private const val REQUEST_CODE = 11111
+        internal const val REQUEST_CODE = 11111
     }
 }
