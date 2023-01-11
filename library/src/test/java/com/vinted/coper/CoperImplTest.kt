@@ -47,7 +47,7 @@ class CoperImplTest {
     fun request_responseIsSuccessful() = runBlocking {
         val response = fixture.request("test")
 
-        assertFalse(response.isGranted())
+        assertTrue(response.isGranted())
     }
 
     @Test
