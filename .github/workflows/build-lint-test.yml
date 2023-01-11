@@ -1,4 +1,4 @@
-name: Build
+name: Coper CI
 
 on:
   push:
