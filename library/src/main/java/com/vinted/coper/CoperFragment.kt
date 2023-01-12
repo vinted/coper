@@ -155,21 +155,32 @@ internal class CoperFragment : Fragment() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode != REQUEST_CODE) {
-            Log.e(TAG, "Permissions result came with not Coper request code: $requestCode")
-            return
-        }
-        if (permissions.isEmpty() && grantResults.isEmpty()) {
-            Log.i(TAG, "Permissions result and permissions came empty")
-            return
-        }
-        onRequestPermissionResult(permissions.toList(), grantResults.toList())
+        onRequestPermissionResult(permissions.toList(), grantResults.toList(), requestCode)
     }
 
     internal fun onRequestPermissionResult(
         permissions: List<String>,
-        permissionsResult: List<Int>
+        permissionsResult: List<Int>,
+        requestCode: Int
     ) {
+        if (requestCode != REQUEST_CODE) {
+            val message = "Permissions result came with not Coper request code: $requestCode"
+            Log.e(TAG, message)
+            permissionRequestState?.deferred?.completeExceptionally(
+                PermissionRequestCancelException(message)
+            )
+            return
+        }
+
+        if (permissions.isEmpty() && permissionsResult.isEmpty()) {
+            val message = "Permissions result and permissions came empty"
+            Log.i(TAG, message)
+            permissionRequestState?.deferred?.completeExceptionally(
+                PermissionRequestCancelException(message)
+            )
+            return
+        }
+
         val permissionRequestState = permissionRequestState
         if (permissionRequestState == null) {
             Log.e(TAG, "Something went wrong with permission request state")
@@ -181,6 +192,9 @@ internal class CoperFragment : Fragment() {
             val message = "Permissions ($permissionsInResult) result came not as requested " +
                     "($currentRequestedPermissions)"
             Log.e(TAG, message)
+            permissionRequestState.deferred.completeExceptionally(
+                PermissionRequestCancelException(message)
+            )
             return
         }
         if (permissionsResult.size != permissions.size) {
@@ -242,6 +256,6 @@ internal class CoperFragment : Fragment() {
 
     companion object {
         private const val TAG = "CoperFragment"
-        private const val REQUEST_CODE = 11111
+        internal const val REQUEST_CODE = 11111
     }
 }
