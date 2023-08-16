@@ -813,7 +813,6 @@ class CoperImplTest {
     fun request_permissionRequestReturnsDifferentPermissions_throwException() {
         runBlocking {
             val requestedPermission = "requested_permission"
-            val resultedPermission = "resulted_permission"
 
             executePermissionRequest(
                 permissionsToRequest = listOf(requestedPermission),

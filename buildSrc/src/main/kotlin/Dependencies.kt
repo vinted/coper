@@ -9,7 +9,7 @@ object Versions {
     const val MOCKITO_KOTILN = "3.2.0"
     const val CORE_KTX = "1.2.0"
     const val FRAGMENT_KTX = "1.2.4"
-    const val DETEKT_RUNTIME = "1.17.1"
+    const val DETEKT_RUNTIME = "1.23.1"
     const val LIFECYCLE = "2.2.0"
 
     const val COMPILE_SDK_VERSION = 29
