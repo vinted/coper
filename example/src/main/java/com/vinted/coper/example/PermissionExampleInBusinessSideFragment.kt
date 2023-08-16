@@ -8,11 +8,16 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import by.kirich1409.viewbindingdelegate.viewBinding
 import com.vinted.coper.CoperBuilder
 import com.vinted.coper.PermissionResult
-import kotlinx.android.synthetic.main.fragment_permission_example_in_business_side.*
+import com.vinted.coper.example.databinding.FragmentPermissionExampleInBusinessSideBinding
 
 class PermissionExampleInBusinessSideFragment : Fragment() {
+
+    private val viewBinding: FragmentPermissionExampleInBusinessSideBinding by viewBinding(
+        FragmentPermissionExampleInBusinessSideBinding::bind
+    )
 
     private lateinit var viewModel: PermissionExampleInBusinessSideViewModel
 
@@ -45,17 +50,17 @@ class PermissionExampleInBusinessSideFragment : Fragment() {
             onPermissionResult(it)
         })
 
-        permission_example_in_business_request_one_permission.setOnClickListener {
+        viewBinding.permissionExampleInBusinessRequestOnePermission.setOnClickListener {
             viewModel.onOnePermissionClicked(Manifest.permission.ACCESS_FINE_LOCATION)
         }
 
-        permission_example_in_business_request_two_permission_one_request.setOnClickListener {
+        viewBinding.permissionExampleInBusinessRequestTwoPermissionOneRequest.setOnClickListener {
             viewModel.onTwoPermissionsClickedWithOneRequest(
                 permissionOne = Manifest.permission.ACCESS_FINE_LOCATION,
                 permissionTwo = Manifest.permission.CAMERA
             )
         }
-        permission_example_in_business_request_two_permission_two_requests.setOnClickListener {
+        viewBinding.permissionExampleInBusinessRequestTwoPermissionTwoRequests.setOnClickListener {
             viewModel.onTwoPermissionsClickedWithTwoRequests(
                 permissionOne = Manifest.permission.ACCESS_FINE_LOCATION,
                 permissionTwo = Manifest.permission.CAMERA

@@ -8,11 +8,16 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import by.kirich1409.viewbindingdelegate.viewBinding
 import com.vinted.coper.CoperBuilder
 import com.vinted.coper.PermissionResult
-import kotlinx.android.synthetic.main.fragment_permission_example_in_ui.*
+import com.vinted.coper.example.databinding.FragmentPermissionExampleInUiBinding
 
 class PermissionExampleInUIFragment : Fragment() {
+
+    private val viewBinding: FragmentPermissionExampleInUiBinding by viewBinding(
+        FragmentPermissionExampleInUiBinding::bind
+    )
 
     private val coper by lazy {
         CoperBuilder()
@@ -30,14 +35,14 @@ class PermissionExampleInUIFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        permission_example_in_ui_request_one_permission.setOnClickListener {
+        viewBinding.permissionExampleInUiRequestOnePermission.setOnClickListener {
             onOnePermissionClicked()
         }
 
-        permission_example_in_ui_request_two_permission_one_request.setOnClickListener {
+        viewBinding.permissionExampleInUiRequestTwoPermissionOneRequest.setOnClickListener {
             onTwoPermissionsClickedWithOneRequest()
         }
-        permission_example_in_ui_request_two_permission_two_requests.setOnClickListener {
+        viewBinding.permissionExampleInUiRequestTwoPermissionTwoRequests.setOnClickListener {
             onTwoPermissionsClickedWithTwoRequests()
         }
     }

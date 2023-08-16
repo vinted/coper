@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     kotlin("android")
-    kotlin("android.extensions")
 }
 
 android {
@@ -28,6 +27,10 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        viewBinding = true
+    }
+    namespace = "com.vinted.coper.example"
 }
 
 dependencies {
@@ -37,5 +40,6 @@ dependencies {
     implementation(Libs.CORE_KTX)
     implementation(Libs.KOTLIN_COROUTINES)
     implementation(Libs.FRAGMENT_KTX)
+    implementation(Libs.VIEW_BINDING_DELEGATE)
     testImplementation(Libs.JUNIT)
 }
