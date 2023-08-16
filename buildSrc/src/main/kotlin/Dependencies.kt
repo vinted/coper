@@ -37,5 +37,6 @@ object Libs {
     const val FRAGMENT_KTX = "androidx.fragment:fragment-ktx:${Versions.FRAGMENT_KTX}"
     const val MOCKITO_INLINE = "org.mockito:mockito-inline:${Versions.MOCKITO}"
     const val LIFECYCLE = "androidx.lifecycle:lifecycle-common-java8:${Versions.LIFECYCLE}"
-    const val VIEW_BINDING_DELEGATE = "com.github.kirich1409:viewbindingpropertydelegate-noreflection:${Versions.VIEW_BINDING_DELEGATE}"
+    const val VIEW_BINDING_DELEGATE = "com.github.kirich1409:" +
+            "viewbindingpropertydelegate-noreflection:${Versions.VIEW_BINDING_DELEGATE}"
 }
