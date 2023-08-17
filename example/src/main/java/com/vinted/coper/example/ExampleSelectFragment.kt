@@ -5,9 +5,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import kotlinx.android.synthetic.main.fragment_example_select.*
+import by.kirich1409.viewbindingdelegate.viewBinding
+import com.vinted.coper.example.databinding.FragmentExampleSelectBinding
 
 class ExampleSelectFragment : Fragment() {
+
+    private val viewBinding: FragmentExampleSelectBinding by viewBinding(
+        FragmentExampleSelectBinding::bind
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -19,12 +24,12 @@ class ExampleSelectFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        example_select_request_viewmodel.setOnClickListener {
+        viewBinding.exampleSelectRequestViewmodel.setOnClickListener {
             (requireActivity() as MainActivity).addFragmentToActivity(
                 PermissionExampleInBusinessSideFragment()
             )
         }
-        example_select_request_fragment.setOnClickListener {
+        viewBinding.exampleSelectRequestFragment.setOnClickListener {
             (requireActivity() as MainActivity).addFragmentToActivity(PermissionExampleInUIFragment())
         }
     }

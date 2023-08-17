@@ -4,7 +4,6 @@ plugins {
     id("com.android.library")
     id("maven-publish")
     kotlin("android")
-    kotlin("android.extensions")
 }
 
 group = "com.github.vinted"
@@ -21,6 +20,10 @@ android {
             freeCompilerArgs = listOf("-Xopt-in=kotlin.contracts.ExperimentalContracts")
         }
     }
+    buildFeatures {
+        viewBinding = true
+    }
+    namespace = "com.vinted.coper"
 }
 
 afterEvaluate {
@@ -66,6 +69,7 @@ dependencies {
     api(Libs.KOTLIN_COROUTINES)
     implementation(Libs.LIFECYCLE)
     implementation(Libs.FRAGMENT_KTX)
+    implementation(Libs.VIEW_BINDING_DELEGATE)
     testImplementation(Libs.MOCKITO_KOTLIN)
     testImplementation(Libs.KOTLIN_TESTS)
     testImplementation(Libs.JUNIT)
