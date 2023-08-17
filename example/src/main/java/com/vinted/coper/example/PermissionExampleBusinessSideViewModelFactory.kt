@@ -7,7 +7,7 @@ import com.vinted.coper.Coper
 class PermissionExampleBusinessSideViewModelFactory(
     private val coper: Coper
 ): ViewModelProvider.Factory {
-    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(PermissionExampleInBusinessSideViewModel::class.java)) {
             PermissionExampleInBusinessSideViewModel(coper) as T
         } else {
