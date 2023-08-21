@@ -11,6 +11,7 @@ import com.vinted.coper.CoperImpl.Companion.FRAGMENT_TAG
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,14 +38,14 @@ class CoperImplTest {
     private val fixture: CoperImpl = getCoperInstance()
 
     @Before
-    fun setup() = runBlocking {
+    fun setup() = runTest {
         fixture.mockGetFragmentWithStub()
         mockCheckPermissions("test", PackageManager.PERMISSION_GRANTED)
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
-    fun request_responseIsSuccessful() = runBlocking {
+    fun request_responseIsSuccessful() = runTest {
         val response = fixture.request("test")
 
         assertTrue(response.isGranted())
@@ -52,133 +53,121 @@ class CoperImplTest {
 
     @Test
     @Config(sdk = [21, 23, 27])
-    fun request_permissionsIsGranted_grantedListConsistOfThisPermission() {
-        runBlocking {
-            val permissionName = "granted"
-            mockCheckPermissions(permissionName, PackageManager.PERMISSION_GRANTED)
+    fun request_permissionsIsGranted_grantedListConsistOfThisPermission() = runTest {
+        val permissionName = "granted"
+        mockCheckPermissions(permissionName, PackageManager.PERMISSION_GRANTED)
 
-            val response = fixture.request(permissionName)
+        val response = fixture.request(permissionName)
 
-            assertTrue(response is PermissionResult.Granted)
-            assertEquals(permissionName, response.grantedPermissions.first())
-        }
+        assertTrue(response is PermissionResult.Granted)
+        assertEquals(permissionName, response.grantedPermissions.first())
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
-    fun request_twoPermissionsIsGranted_grantedListConsistOfThisPermissions() {
-        runBlocking {
-            val firstPermission = "granted"
-            val secondPermission = "granted2"
-            mockCheckPermissions(firstPermission, PackageManager.PERMISSION_GRANTED)
-            mockCheckPermissions(secondPermission, PackageManager.PERMISSION_GRANTED)
+    fun request_twoPermissionsIsGranted_grantedListConsistOfThisPermissions() = runTest {
+        val firstPermission = "granted"
+        val secondPermission = "granted2"
+        mockCheckPermissions(firstPermission, PackageManager.PERMISSION_GRANTED)
+        mockCheckPermissions(secondPermission, PackageManager.PERMISSION_GRANTED)
 
-            val response = fixture.request(firstPermission, secondPermission)
+        val response = fixture.request(firstPermission, secondPermission)
 
-            assertTrue(response is PermissionResult.Granted)
-            assertEquals(listOf(firstPermission, secondPermission), response.grantedPermissions)
-        }
+        assertTrue(response is PermissionResult.Granted)
+        assertEquals(listOf(firstPermission, secondPermission), response.grantedPermissions)
     }
 
     @Test
     @Config(sdk = [21])
-    fun request_sdkUnder23AndPermissionsDenied_permissionResultDeniedWaitingResult() {
-        runBlocking {
-            val permission = "denied"
-            mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
+    fun request_sdkUnder23AndPermissionsDenied_permissionResultDeniedWaitingResult() = runTest {
+        val permission = "denied"
+        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
 
-            val response = fixture.request(permission)
+        val response = fixture.request(permission)
 
-            assertTrue(response.isDenied())
-            assertEquals(listOf(permission), response.getAllDeniedPermissions())
-        }
+        assertTrue(response.isDenied())
+        assertEquals(listOf(permission), response.getAllDeniedPermissions())
     }
 
     @Test
-    fun request_permissionsIsDeniedRationale_permissionDeniedRationaleResult() {
-        runBlocking {
-            val permissionName = "denied"
-            mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
-            activity.setShouldShowRequestPermissionRationale(
-                permission = permissionName,
-                rationale = true
-            )
+    fun request_permissionsIsDeniedRationale_permissionDeniedRationaleResult() = runTest {
+        val permissionName = "denied"
+        mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
+        activity.setShouldShowRequestPermissionRationale(
+            permission = permissionName,
+            rationale = true
+        )
 
-            val response = executePermissionRequest(
-                listOf(permissionName),
-                listOf(PermissionChecker.PERMISSION_DENIED)
-            )
+        val response = executePermissionRequest(
+            listOf(permissionName),
+            listOf(PermissionChecker.PERMISSION_DENIED)
+        )
 
-            assertTrue(response is PermissionResult.Denied)
-            assertTrue { response.isRationale() }
-            assertTrue { response.getDeniedRationale().isNotEmpty() }
-        }
+        assertTrue(response is PermissionResult.Denied)
+        assertTrue { response.isRationale() }
+        assertTrue { response.getDeniedRationale().isNotEmpty() }
     }
 
     @Test
-    fun request_permissionsIsDeniedPermanently_permissionDeniedPermanentlyResult() {
-        runBlocking {
-            val permissionName = "denied_perm"
-            mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
-            activity.setShouldShowRequestPermissionRationale(
-                permission = permissionName,
-                rationale = false
-            )
+    fun request_permissionsIsDeniedPermanently_permissionDeniedPermanentlyResult() = runTest {
+        val permissionName = "denied_perm"
+        mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
+        activity.setShouldShowRequestPermissionRationale(
+            permission = permissionName,
+            rationale = false
+        )
 
-            val response = executePermissionRequest(
-                permissionsToRequest = listOf(permissionName),
-                permissionResult = listOf(PermissionChecker.PERMISSION_DENIED)
-            )
+        val response = executePermissionRequest(
+            permissionsToRequest = listOf(permissionName),
+            permissionResult = listOf(PermissionChecker.PERMISSION_DENIED)
+        )
 
-            assertTrue(response is PermissionResult.Denied)
-            assertTrue { response.isPermanentlyDenied() }
-            assertTrue { response.getDeniedPermanently().isNotEmpty() }
-        }
+        assertTrue(response is PermissionResult.Denied)
+        assertTrue { response.isPermanentlyDenied() }
+        assertTrue { response.getDeniedPermanently().isNotEmpty() }
     }
 
     @Test
-    fun request_permissionsIsDeniedPermanentlyAndOtherRationale_bothPermissionsExist() {
-        runBlocking {
-            val permissionPermanently = "denied_perm"
-            val permissionRationale = "denied_rat"
-            mockCheckPermissions(permissionPermanently, PackageManager.PERMISSION_DENIED)
-            activity.setShouldShowRequestPermissionRationale(
-                permission = permissionPermanently,
-                rationale = false
-            )
-            mockCheckPermissions(permissionRationale, PackageManager.PERMISSION_DENIED)
-            activity.setShouldShowRequestPermissionRationale(
-                permission = permissionRationale,
-                rationale = true
-            )
+    fun request_permissionsIsDeniedPermanentlyAndOtherRationale_bothPermissionsExist() = runTest {
+        val permissionPermanently = "denied_perm"
+        val permissionRationale = "denied_rat"
+        mockCheckPermissions(permissionPermanently, PackageManager.PERMISSION_DENIED)
+        activity.setShouldShowRequestPermissionRationale(
+            permission = permissionPermanently,
+            rationale = false
+        )
+        mockCheckPermissions(permissionRationale, PackageManager.PERMISSION_DENIED)
+        activity.setShouldShowRequestPermissionRationale(
+            permission = permissionRationale,
+            rationale = true
+        )
 
-            val response = executePermissionRequest(
-                permissionsToRequest = listOf(permissionPermanently, permissionRationale),
-                permissionResult = listOf(
-                    PermissionChecker.PERMISSION_DENIED,
-                    PermissionChecker.PERMISSION_DENIED
+        val response = executePermissionRequest(
+            permissionsToRequest = listOf(permissionPermanently, permissionRationale),
+            permissionResult = listOf(
+                PermissionChecker.PERMISSION_DENIED,
+                PermissionChecker.PERMISSION_DENIED
+            )
+        )
+
+        assertTrue(response is PermissionResult.Denied)
+        assertTrue(response.isPermanentlyDenied())
+        assertTrue(response.getDeniedPermanently().contains(permissionPermanently))
+        assertTrue(response.isRationale())
+        assertTrue(response.getDeniedRationale().contains(permissionRationale))
+        assertTrue(
+            response.getAllDeniedPermissions().containsAll(
+                listOf(
+                    permissionPermanently,
+                    permissionRationale
                 )
             )
-
-            assertTrue(response is PermissionResult.Denied)
-            assertTrue(response.isPermanentlyDenied())
-            assertTrue(response.getDeniedPermanently().contains(permissionPermanently))
-            assertTrue(response.isRationale())
-            assertTrue(response.getDeniedRationale().contains(permissionRationale))
-            assertTrue(
-                response.getAllDeniedPermissions().containsAll(
-                    listOf(
-                        permissionPermanently,
-                        permissionRationale
-                    )
-                )
-            )
-        }
+        )
     }
 
     @Test
     fun request_twoPermissionsOneGrantedAndOneDenied_onePermissionEmitsToOnGrantedOtherToOnDenied() {
-        runBlocking {
+        return runTest {
             val permissionDenied = "denied"
             mockCheckPermissions(permissionDenied, PackageManager.PERMISSION_DENIED)
             val permissionGranted = "granted"
@@ -202,24 +191,22 @@ class CoperImplTest {
     }
 
     @Test
-    fun request_permissionsIsDeniedButOnrequestGranted_permissionGrantedResult() {
-        runBlocking {
-            val permissionName = "denied_and_granted"
-            mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
+    fun request_permissionsIsDeniedButOnrequestGranted_permissionGrantedResult() = runTest {
+        val permissionName = "denied_and_granted"
+        mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
 
-            val response = executePermissionRequest(
-                permissionsToRequest = listOf(permissionName),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-            )
+        val response = executePermissionRequest(
+            permissionsToRequest = listOf(permissionName),
+            permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+        )
 
-            assertTrue(response is PermissionResult.Granted)
-            assertEquals(listOf(permissionName), response.grantedPermissions)
-        }
+        assertTrue(response is PermissionResult.Granted)
+        assertEquals(listOf(permissionName), response.grantedPermissions)
     }
 
     @Test
     fun request_twoPermissionsRequestBothGrantedOnRequest_permissionResultIsGrantedAndHasAllPermissions() {
-        runBlocking {
+        return runTest {
             val firstPermission = "first"
             val secondPermission = "second"
             mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
@@ -243,7 +230,7 @@ class CoperImplTest {
 
     @Test
     fun request_twoPermissionsRequestOneGrantedOneNotOnRequest_permissionResultIsDeniedAndHasThatPermission() {
-        runBlocking {
+        return runTest {
             val firstPermission = "first"
             val secondPermission = "second"
             mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
@@ -267,7 +254,7 @@ class CoperImplTest {
 
     @Test
     fun request_twoPermissionsRequestOneDeniedPermOneRationale_permissionResultIsDeniedWithBoth() {
-        runBlocking {
+        return runTest {
             val firstPermission = "first"
             val secondPermission = "second"
             activity.setShouldShowRequestPermissionRationale(
@@ -301,37 +288,35 @@ class CoperImplTest {
     }
 
     @Test
-    fun request_twoParallelPermissionsRequestBothGranted_bothGotGranted() {
-        runBlocking {
-            val firstPermission = "first"
-            val secondPermission = "second"
-            mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+    fun request_twoParallelPermissionsRequestBothGranted_bothGotGranted() = runTest {
+        val firstPermission = "first"
+        val secondPermission = "second"
+        mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
+        mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
 
-            val response1Job = async {
-                executePermissionRequest(
-                    permissionsToRequest = listOf(firstPermission),
-                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                )
-            }
-            val response2Job = async {
-                executePermissionRequest(
-                    permissionsToRequest = listOf(secondPermission),
-                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                )
-            }
-            val response1 = response1Job.await()
-            val response2 = response2Job.await()
-
-            assertTrue(response1 is PermissionResult.Granted)
-            assertTrue(response2 is PermissionResult.Granted)
-            assertNotEquals(response1.grantedPermissions, response2.grantedPermissions)
+        val response1Job = async {
+            executePermissionRequest(
+                permissionsToRequest = listOf(firstPermission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
         }
+        val response2Job = async {
+            executePermissionRequest(
+                permissionsToRequest = listOf(secondPermission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
+        }
+        val response1 = response1Job.await()
+        val response2 = response2Job.await()
+
+        assertTrue(response1 is PermissionResult.Granted)
+        assertTrue(response2 is PermissionResult.Granted)
+        assertNotEquals(response1.grantedPermissions, response2.grantedPermissions)
     }
 
     @Test
     fun request_twoParallelPermissionsRequestFromDiffReferences_bothGotGrantedSynchronously() {
-        runBlocking {
+        return runTest {
             val firstPermission = "first"
             val secondPermission = "second"
             val firstCoperReference = getCoperInstance()
@@ -365,180 +350,163 @@ class CoperImplTest {
     }
 
     @Test
-    fun request_twoSynchronousPermissionsRequestBothGranted_bothGotGranted() {
-        runBlocking {
-            val firstPermission = "first"
-            val secondPermission = "second"
-            mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+    fun request_twoSynchronousPermissionsRequestBothGranted_bothGotGranted() = runTest {
+        val firstPermission = "first"
+        val secondPermission = "second"
+        mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
+        mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
 
-            val response1 = executePermissionRequest(
-                permissionsToRequest = listOf(firstPermission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-            )
-            val response2 = executePermissionRequest(
-                permissionsToRequest = listOf(secondPermission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-            )
+        val response1 = executePermissionRequest(
+            permissionsToRequest = listOf(firstPermission),
+            permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+        )
+        val response2 = executePermissionRequest(
+            permissionsToRequest = listOf(secondPermission),
+            permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+        )
 
-            assertTrue(response1 is PermissionResult.Granted)
-            assertTrue(response2 is PermissionResult.Granted)
-            assertNotEquals(response1.grantedPermissions, response2.grantedPermissions)
-        }
+        assertTrue(response1 is PermissionResult.Granted)
+        assertTrue(response2 is PermissionResult.Granted)
+        assertNotEquals(response1.grantedPermissions, response2.grantedPermissions)
     }
 
     @Test
-    fun getFragment_twoRequest_sameInstance() {
-        runBlocking {
-            val fixture = getCoperInstance()
-            val firstFragment = fixture.getFragmentSafely()
-            val secondFragment = fixture.getFragmentSafely()
+    fun getFragment_twoRequest_sameInstance() = runTest {
+        val fixture = getCoperInstance()
+        val firstFragment = fixture.getFragmentSafely()
+        val secondFragment = fixture.getFragmentSafely()
 
-            assertTrue { firstFragment === secondFragment }
-        }
+        assertTrue { firstFragment === secondFragment }
     }
 
     @Test
-    fun getFragment_manyRequestAsync_onlyOneFragmentCreated() {
-        runBlocking {
-            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity: FragmentActivity = activityController.setup().get()
-            val fragmentManager = activity.supportFragmentManager
-            val fixture = getCoperInstance(
-                lifecycle = activity.lifecycle,
-                fragmentManager = fragmentManager
-            )
-            val fragmentPromises = mutableListOf<Deferred<CoperFragment?>>()
+    fun getFragment_manyRequestAsync_onlyOneFragmentCreated() = runTest {
+        val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+        val activity: FragmentActivity = activityController.setup().get()
+        val fragmentManager = activity.supportFragmentManager
+        val fixture = getCoperInstance(
+            lifecycle = activity.lifecycle,
+            fragmentManager = fragmentManager
+        )
+        val fragmentPromises = mutableListOf<Deferred<CoperFragment?>>()
 
-            repeat(10) {
-                fragmentPromises.add(async(Dispatchers.IO) {
-                    runCatching {
-                        fixture.getFragmentSafely()
-                    }.getOrNull()
-                })
-            }
-
-            fixture.latestCommittedFragmentFlow.filterNotNull().first()
-            shadowOf(getMainLooper()).idle()
-            val fragments = fragmentPromises.awaitAll().toSet()
-            assertEquals(1, fragments.size)
-            assertEquals(fragments.first(), fragmentManager.findFragmentByTag(FRAGMENT_TAG))
+        repeat(10) {
+            fragmentPromises.add(async(Dispatchers.IO) {
+                runCatching {
+                    fixture.getFragmentSafely()
+                }.getOrNull()
+            })
         }
+
+        fixture.latestCommittedFragmentFlow.filterNotNull().first()
+        shadowOf(getMainLooper()).idle()
+        val fragments = fragmentPromises.awaitAll().toSet()
+        assertEquals(1, fragments.size)
+        assertEquals(fragments.first(), fragmentManager.findFragmentByTag(FRAGMENT_TAG))
     }
 
     @Test
-    fun getFragment_lifecycleAlreadyAfterCreated_fragmentTransactionMade() {
-        runBlocking {
-            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity = activityController.setup().pause().get()
-            val fixture = getCoperInstance(
-                lifecycle = activity.lifecycle,
-                fragmentManager = activity.supportFragmentManager
-            )
+    fun getFragment_lifecycleAlreadyAfterCreated_fragmentTransactionMade() = runTest {
+        val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+        val activity = activityController.setup().pause().get()
+        val fixture = getCoperInstance(
+            lifecycle = activity.lifecycle,
+            fragmentManager = activity.supportFragmentManager
+        )
 
-            val fragment = withTimeout(1000) {
-                fixture.getFragmentSafely()
-            }
-
-            assertEquals(fragment, activity.supportFragmentManager.findFragmentByTag(FRAGMENT_TAG))
+        val fragment = withTimeout(1000) {
+            fixture.getFragmentSafely()
         }
+
+        assertEquals(fragment, activity.supportFragmentManager.findFragmentByTag(FRAGMENT_TAG))
     }
 
     @Test
-    fun request_onIoThread_shouldNotCrash() {
-        runBlocking {
-            val fixture = getCoperInstance()
-            fixture.mockGetFragmentWithStub()
+    fun request_onIoThread_shouldNotCrash() = runTest {
+        val fixture = getCoperInstance()
+        fixture.mockGetFragmentWithStub()
 
-            withContext(Dispatchers.IO) {
-                executePermissionRequest(
-                    coperImplReference = fixture,
-                    permissionsToRequest = listOf("test"),
-                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                )
-            }
-        }
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun request_resultPermissionsEmptyList_throwException() {
-        val crashPermission = "crash"
-        mockCheckPermissions(crashPermission, PackageManager.PERMISSION_DENIED)
-
-        runBlocking {
+        withContext(Dispatchers.IO) {
             executePermissionRequest(
-                permissionsToRequest = emptyList(),
+                coperImplReference = fixture,
+                permissionsToRequest = listOf("test"),
                 permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
             )
         }
     }
 
     @Test(expected = IllegalStateException::class)
-    fun request_resultPermissionResultEmptyList_throwException() {
+    fun request_resultPermissionsEmptyList_throwException() = runTest {
         val crashPermission = "crash"
         mockCheckPermissions(crashPermission, PackageManager.PERMISSION_DENIED)
 
-        runBlocking {
-            executePermissionRequest(listOf(crashPermission), emptyList())
-        }
+
+        executePermissionRequest(
+            permissionsToRequest = emptyList(),
+            permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+        )
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun request_resultPermissionResultEmptyList_throwException() = runTest {
+        val crashPermission = "crash"
+        mockCheckPermissions(crashPermission, PackageManager.PERMISSION_DENIED)
+
+        executePermissionRequest(listOf(crashPermission), emptyList())
     }
 
     @Test(expected = PermissionRequestCancelException::class)
-    fun request_onDestroy_throwCancelException() {
-        runBlocking {
-            val permission = "onDestroy"
+    fun request_onDestroy_throwCancelException() = runTest {
+        val permission = "onDestroy"
 
-            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity = activityController.setup().get()
+        val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+        val activity = activityController.setup().get()
 
-            val fixture = getCoperInstance(
-                fragmentManager = activity.supportFragmentManager,
-                lifecycle = activity.lifecycle,
-            )
+        val fixture = getCoperInstance(
+            fragmentManager = activity.supportFragmentManager,
+            lifecycle = activity.lifecycle,
+        )
 
-            val fragment = fixture.getFragmentSafely()
+        val fragment = fixture.getFragmentSafely()
 
-            val job = async {
-                fixture.request(permission)
-            }
-            fragment.permissionRequestStateFlow.filterNotNull().first()
-            activityController.destroy()
-            job.await()
+        val job = async {
+            fixture.request(permission)
         }
+        fragment.permissionRequestStateFlow.filterNotNull().first()
+        activityController.destroy()
+        job.await()
     }
 
     @Test
-    fun request_onConfigurationChange_requestDone() {
-        runBlocking {
-            val activityController = Robolectric.buildActivity(CoperTestActivity::class.java)
-            val activity = activityController.setup().get()
-            val fragmentManager = activity.supportFragmentManager
-            val fixture = getCoperInstance(
-                lifecycle = activity.lifecycle,
-                fragmentManager = fragmentManager
-            )
-            val fragment = fixture.getFragmentSafely()
-            val permission = "onConfigurationChange"
-            activity.setPermissionResult(permission, PackageManager.PERMISSION_DENIED)
+    fun request_onConfigurationChange_requestDone() = runTest {
+        val activityController = Robolectric.buildActivity(CoperTestActivity::class.java)
+        val activity = activityController.setup().get()
+        val fragmentManager = activity.supportFragmentManager
+        val fixture = getCoperInstance(
+            lifecycle = activity.lifecycle,
+            fragmentManager = fragmentManager
+        )
+        val fragment = fixture.getFragmentSafely()
+        val permission = "onConfigurationChange"
+        activity.setPermissionResult(permission, PackageManager.PERMISSION_DENIED)
 
-            val job = async {
-                fixture.request(permission)
-            }
-            fragment.permissionRequestStateFlow.filterNotNull().first()
-            activity.recreate()
-            fragment.onRequestPermissionResult(
-                permissions = listOf(permission),
-                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED),
-                requestCode = CoperFragment.REQUEST_CODE
-            )
-            val result = job.await()
-
-            assertEquals(PermissionResult.Granted::class, result::class)
+        val job = async {
+            fixture.request(permission)
         }
+        fragment.permissionRequestStateFlow.filterNotNull().first()
+        activity.recreate()
+        fragment.onRequestPermissionResult(
+            permissions = listOf(permission),
+            permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED),
+            requestCode = CoperFragment.REQUEST_CODE
+        )
+        val result = job.await()
+
+        assertEquals(PermissionResult.Granted::class, result::class)
     }
 
     @Test
-    fun withPermissions_requestGranted_bodyRun() = runBlocking {
+    fun withPermissions_requestGranted_bodyRun() = runTest {
         val permission = "permission"
         mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
 
@@ -548,7 +516,7 @@ class CoperImplTest {
     }
 
     @Test(expected = PermissionsRequestFailedException::class)
-    fun withPermissions_requestDenied_throwException() = runBlocking {
+    fun withPermissions_requestDenied_throwException() = runTest {
         val permission = "permission"
         mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
 
@@ -557,7 +525,7 @@ class CoperImplTest {
     }
 
     @Test
-    fun request_permissionResultCameWithDifferentPermissions_jobIsNotCompleted() = runBlocking {
+    fun request_permissionResultCameWithDifferentPermissions_jobIsNotCompleted() = runTest {
         val permission = "permission"
         mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
         val fragment = fixture.getFragmentSafely()
@@ -583,79 +551,73 @@ class CoperImplTest {
     }
 
     @Test
-    fun request_onResumeCalledDuringRequest_permissionRequestStarted() {
-        runBlocking {
-            val permission = "onResume"
-            val fragment = fixture.getFragmentSafely()
-            mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+    fun request_onResumeCalledDuringRequest_permissionRequestStarted() = runTest {
+        val permission = "onResume"
+        val fragment = fixture.getFragmentSafely()
+        mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
 
-            val responseAsync = async {
-                fixture.request(permission)
-            }
-            fragment.permissionRequestStateFlow.filterNotNull().first()
-            fragment.onResume()
-
-            verify(fragment, times(2)).requestPermissions(anyArray(), anyOrNull())
-            responseAsync.cancel()
+        val responseAsync = async {
+            fixture.request(permission)
         }
+        fragment.permissionRequestStateFlow.filterNotNull().first()
+        fragment.onResume()
+
+        verify(fragment, times(2)).requestPermissions(anyArray(), anyOrNull())
+        responseAsync.cancel()
     }
 
     @Test
-    fun request_twoIdenticalRequest_twoRequestCompleted() {
-        runBlocking {
-            val permission = "sameRequest"
-            mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
-            val responseAsync1 = async {
-                executePermissionRequest(
-                    permissionsToRequest = listOf(permission),
-                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                )
-            }
-            val responseAsync2 = async {
-                executePermissionRequest(
-                    permissionsToRequest = listOf(permission),
-                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                )
-            }
-            val result2 = responseAsync2.await()
-            val result1 = responseAsync1.await()
-
-            assertTrue(result1.isGranted())
-            assertTrue(result2.isGranted())
+    fun request_twoIdenticalRequest_twoRequestCompleted() = runTest {
+        val permission = "sameRequest"
+        mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+        val responseAsync1 = async {
+            executePermissionRequest(
+                permissionsToRequest = listOf(permission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
         }
+        val responseAsync2 = async {
+            executePermissionRequest(
+                permissionsToRequest = listOf(permission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
+        }
+        val result2 = responseAsync2.await()
+        val result1 = responseAsync1.await()
+
+        assertTrue(result1.isGranted())
+        assertTrue(result2.isGranted())
     }
 
     @Test
-    fun request_twoIdenticalRequestButOrderIsDifferent_twoRequestCompleted() {
-        runBlocking {
-            val firstPermission = "firstPermission"
-            val secondPermission = "secondPermission"
-            mockCheckPermissions(firstPermission, PermissionChecker.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PermissionChecker.PERMISSION_DENIED)
+    fun request_twoIdenticalRequestButOrderIsDifferent_twoRequestCompleted() = runTest {
+        val firstPermission = "firstPermission"
+        val secondPermission = "secondPermission"
+        mockCheckPermissions(firstPermission, PermissionChecker.PERMISSION_DENIED)
+        mockCheckPermissions(secondPermission, PermissionChecker.PERMISSION_DENIED)
 
-            val responseAsync1 = async {
-                executePermissionRequest(
-                    permissionsToRequest = listOf(firstPermission),
-                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                )
-            }
-            val responseAsync2 = async {
-                executePermissionRequest(
-                    permissionsToRequest = listOf(secondPermission),
-                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                )
-            }
-            val result2 = responseAsync2.await()
-            val result1 = responseAsync1.await()
-
-            assertTrue(result1.isGranted())
-            assertTrue(result2.isGranted())
+        val responseAsync1 = async {
+            executePermissionRequest(
+                permissionsToRequest = listOf(firstPermission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
         }
+        val responseAsync2 = async {
+            executePermissionRequest(
+                permissionsToRequest = listOf(secondPermission),
+                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+            )
+        }
+        val result2 = responseAsync2.await()
+        val result1 = responseAsync1.await()
+
+        assertTrue(result1.isGranted())
+        assertTrue(result2.isGranted())
     }
 
     @Test
     fun request_permissionsRequestedButDifferentOrderPermissionsCameAsResult_permissionsGranted() {
-        runBlocking {
+        return runTest {
             val firstPermission = "firstPermission"
             val secondPermission = "secondPermission"
             mockCheckPermissions(firstPermission, PermissionChecker.PERMISSION_DENIED)
@@ -684,112 +646,98 @@ class CoperImplTest {
     }
 
     @Test
-    fun isRequestPending_requestNotPending_returnsFalse() {
-        runBlocking {
-            val isPending = fixture.isRequestPendingSafe()
+    fun isRequestPending_requestNotPending_returnsFalse() = runTest {
+        val isPending = fixture.isRequestPendingSafe()
 
-            assertFalse(isPending)
-        }
+        assertFalse(isPending)
     }
 
     @Test
-    fun isRequestPending_requestIsPending_returnsTrue() {
+    fun isRequestPending_requestIsPending_returnsTrue() = runTest {
         mockCheckPermissions("test", PermissionChecker.PERMISSION_DENIED)
-        runBlocking {
-            val responseAsync = async {
-                fixture.request("test")
-            }
-            fixture.getFragmentSafely().permissionRequestStateFlow.filterNotNull().first()
-
-            val isPending = fixture.isRequestPendingSafe()
-
-            assertTrue(isPending)
-            responseAsync.cancel()
+        val responseAsync = async {
+            fixture.request("test")
         }
+        fixture.getFragmentSafely().permissionRequestStateFlow.filterNotNull().first()
+
+        val isPending = fixture.isRequestPendingSafe()
+
+        assertTrue(isPending)
+        responseAsync.cancel()
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
-    fun isPermissionsGranted_permissionsNotGranted_returnsFalse() {
-        runBlocking {
-            mockCheckPermissions("not_granted", PermissionChecker.PERMISSION_DENIED)
+    fun isPermissionsGranted_permissionsNotGranted_returnsFalse() = runTest {
+        mockCheckPermissions("not_granted", PermissionChecker.PERMISSION_DENIED)
 
-            val isGranted = fixture.isPermissionsGrantedSafe("not_granted")
+        val isGranted = fixture.isPermissionsGrantedSafe("not_granted")
 
-            assertFalse(isGranted)
-        }
+        assertFalse(isGranted)
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
-    fun isPermissionsGranted_permissionsNotGrantedByOp_returnsFalse() {
-        runBlocking {
-            mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
+    fun isPermissionsGranted_permissionsNotGrantedByOp_returnsFalse() = runTest {
+        mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
 
-            val isGranted = fixture.isPermissionsGrantedSafe("not_granted_op")
+        val isGranted = fixture.isPermissionsGrantedSafe("not_granted_op")
 
-            assertFalse(isGranted)
-        }
+        assertFalse(isGranted)
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
-    fun isPermissionsGranted_permissionsGranted_returnsTrue() {
-        runBlocking {
-            mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
+    fun isPermissionsGranted_permissionsGranted_returnsTrue() = runTest {
+        mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
 
-            val isGranted = fixture.isPermissionsGrantedSafe("granted")
+        val isGranted = fixture.isPermissionsGrantedSafe("granted")
 
-            assertTrue(isGranted)
-        }
+        assertTrue(isGranted)
     }
 
     @Test
-    fun request_manyParallelRequestsAllGranted_allGranted() {
-        runBlocking {
-            val testCount = 1000
-            val requests = mutableListOf<Deferred<PermissionResult>>()
-            for (i in 0 until testCount) {
-                val permission = "test-$i"
-                mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+    fun request_manyParallelRequestsAllGranted_allGranted() = runTest {
+        val testCount = 1000
+        val requests = mutableListOf<Deferred<PermissionResult>>()
+        for (i in 0 until testCount) {
+            val permission = "test-$i"
+            mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
 
-                requests.add(async {
-                    executePermissionRequest(
-                        permissionsToRequest = listOf(permission),
-                        permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-                    )
-                })
-            }
-            val requestResults = requests.awaitAll()
+            requests.add(async {
+                executePermissionRequest(
+                    permissionsToRequest = listOf(permission),
+                    permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
+                )
+            })
+        }
+        val requestResults = requests.awaitAll()
 
-            assertEquals(testCount, requestResults.size)
-            requestResults.forEachIndexed { index, permissionResult ->
-                assertTrue(permissionResult.isGranted())
-                assertEquals("test-$index", permissionResult.grantedPermissions.first())
-            }
+        assertEquals(testCount, requestResults.size)
+        requestResults.forEachIndexed { index, permissionResult ->
+            assertTrue(permissionResult.isGranted())
+            assertEquals("test-$index", permissionResult.grantedPermissions.first())
         }
     }
 
     @Test(expected = TimeoutCancellationException::class)
-    fun getFragmentSafely_lifecycleNotReady_crashWithTimeout() {
-        runBlocking {
-            val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-            val activity = activityController.get()
+    fun getFragmentSafely_lifecycleNotReady_crashWithTimeout() = runTest {
+        val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+        val activity = activityController.get()
 
-            val fixture = getCoperInstance(
-                fragmentManager = activity.supportFragmentManager,
-                lifecycle = activity.lifecycle,
-            )
+        val fixture = getCoperInstance(
+            fragmentManager = activity.supportFragmentManager,
+            lifecycle = activity.lifecycle,
+        )
 
-            withTimeout(100) {
-                fixture.getFragmentSafely()
-            }
+        withTimeout(100) {
+            fixture.getFragmentSafely()
         }
     }
 
     @Test
     @Config(sdk = [21, 23, 27])
-    fun request_runOnPausingDispatcher_responseIsSuccessful() = runBlocking {
+    fun request_runOnPausingDispatcher_responseIsSuccessful() = runTest {
         val isCancelled = fixture.getFragmentSafely().lifecycleScope.launchWhenCreated {
             fixture.request("test")
         }.isCancelled
@@ -797,42 +745,36 @@ class CoperImplTest {
     }
 
     @Test(expected = IllegalStateException::class)
-    fun request_permissionRequestReturnsEmptyResults_throwException() {
-        runBlocking {
-            val permissionName = "interrupted_permission"
+    fun request_permissionRequestReturnsEmptyResults_throwException() = runTest {
+        val permissionName = "interrupted_permission"
 
-            executePermissionRequest(
-                permissionsToRequest = listOf(permissionName),
-                permissionsInResults = emptyList(),
-                permissionResult = emptyList()
-            )
-        }
+        executePermissionRequest(
+            permissionsToRequest = listOf(permissionName),
+            permissionsInResults = emptyList(),
+            permissionResult = emptyList()
+        )
     }
 
     @Test(expected = IllegalStateException::class)
-    fun request_permissionRequestReturnsDifferentPermissions_throwException() {
-        runBlocking {
-            val requestedPermission = "requested_permission"
+    fun request_permissionRequestReturnsDifferentPermissions_throwException() = runTest {
+        val requestedPermission = "requested_permission"
 
-            executePermissionRequest(
-                permissionsToRequest = listOf(requestedPermission),
-                permissionsInResults = listOf(requestedPermission),
-                permissionResult = emptyList()
-            )
-        }
+        executePermissionRequest(
+            permissionsToRequest = listOf(requestedPermission),
+            permissionsInResults = listOf(requestedPermission),
+            permissionResult = emptyList()
+        )
     }
 
     @Test(expected = IllegalStateException::class)
-    fun request_requestCodeIsNotOfCoperFragment_throwException() {
-        runBlocking {
-            val requestedPermission = "requested_permission"
+    fun request_requestCodeIsNotOfCoperFragment_throwException() = runTest {
+        val requestedPermission = "requested_permission"
 
-            executePermissionRequest(
-                permissionsToRequest = listOf(requestedPermission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_DENIED),
-                requestCode = 0
-            )
-        }
+        executePermissionRequest(
+            permissionsToRequest = listOf(requestedPermission),
+            permissionResult = listOf(PermissionChecker.PERMISSION_DENIED),
+            requestCode = 0
+        )
     }
 
     private suspend fun executePermissionRequest(

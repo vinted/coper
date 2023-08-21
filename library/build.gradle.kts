@@ -76,4 +76,5 @@ dependencies {
     testImplementation(Libs.MOCKITO)
     testImplementation(Libs.ROBOLECTRIC)
     testImplementation(Libs.MOCKITO_INLINE)
+    testImplementation(Libs.KOTLIN_COROUTINES_TEST)
 }
