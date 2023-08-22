@@ -7,7 +7,7 @@ object Versions {
     const val ROBOLECTRIC = "4.3"
     const val MOCKITO = "3.12.4"
     const val MOCKITO_KOTILN = "3.2.0"
-    const val CORE_KTX = "1.2.0"
+    const val CORE_KTX = "1.10.1"
     const val FRAGMENT_KTX = "1.2.4"
     const val DETEKT_RUNTIME = "1.23.1"
     const val LIFECYCLE = "2.2.0"
