@@ -18,7 +18,7 @@ object Versions {
     const val MIN_SDK_VERSION = 21
 
     private const val MAJOR = 0
-    private const val MINOR = 5
+    private const val MINOR = 6
     private const val PATCH = 0
 
     const val VERSION_NAME: String = "$MAJOR.$MINOR.$PATCH"
