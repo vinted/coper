@@ -9,10 +9,10 @@ plugins {
 group = "com.github.vinted"
 
 android {
-    compileSdkVersion(Versions.COMPILE_SDK_VERSION)
+    compileSdk = Versions.COMPILE_SDK_VERSION
 
     defaultConfig {
-        minSdkVersion(Versions.MIN_SDK_VERSION)
+        minSdk = Versions.MIN_SDK_VERSION
     }
 
     buildTypes {

@@ -13,7 +13,7 @@ object Versions {
     const val LIFECYCLE = "2.2.0"
     const val VIEW_BINDING_DELEGATE = "1.5.9"
 
-    const val COMPILE_SDK_VERSION = 29
+    const val COMPILE_SDK_VERSION = 33
     const val MIN_SDK_VERSION = 21
 
     private const val MAJOR = 0

@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    compileSdkVersion(Versions.COMPILE_SDK_VERSION)
+    compileSdk = Versions.COMPILE_SDK_VERSION
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.vinted.coper.example"
-        minSdkVersion(Versions.MIN_SDK_VERSION)
+        minSdk = Versions.MIN_SDK_VERSION
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
