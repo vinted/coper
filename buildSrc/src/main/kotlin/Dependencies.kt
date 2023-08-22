@@ -19,7 +19,7 @@ object Versions {
 
     private const val MAJOR = 0
     private const val MINOR = 6
-    private const val PATCH = 0
+    private const val PATCH = 1
 
     const val VERSION_NAME: String = "$MAJOR.$MINOR.$PATCH"
 }
