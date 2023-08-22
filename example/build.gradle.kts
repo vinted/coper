@@ -17,6 +17,7 @@ android {
     defaultConfig {
         applicationId = "com.vinted.coper.example"
         minSdk = Versions.MIN_SDK_VERSION
+        targetSdk = Versions.TARGET_SDK_VERSION
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
