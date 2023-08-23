@@ -9,10 +9,10 @@ Fragment lifecycle is covered by this library, so you should not worry about req
 It is designed to use in any place like ViewModel as in fragment or activity.
 
 ### Download
-```
+```groovy
 allprojects {
     repositories {
-        ...
+        // ...
         maven { url 'https://jitpack.io' }
     }
 }
