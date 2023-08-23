@@ -120,7 +120,7 @@ coper.isRequestPendingSafe()
 // Returns true if all permissions granted
 coper.isPermissionsGrantedSafe(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 ```
-### Cancelation
+### Cancellation
 If you cancel job, request will be left until user will submit, but client will not get response.
 ### State recreation
 Sometimes after application killed (for example temporally killing to preserve memory), the dialog could be still visible, but reference to request will be lost.
