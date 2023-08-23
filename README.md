@@ -28,8 +28,8 @@ val coper: Coper = CoperBuilder()
     .setFragmentActivity(activity)
     .build()
 ```
-###### Note:
-You must provide fragment manager to build coper.
+> [!NOTE]
+> You must provide fragment manager to build coper.
 ### Usage
 ##### Request:
 ```kotlin
@@ -37,8 +37,8 @@ launch {
     val permissionResult: PermissionResult = coper.request(Manifest.permission.CAMERA)
 }
 ```
-###### Note:
-Calling permission on a background thread or request with 0 permissions will throw `IllegalStateException`
+> [!NOTE]
+> Calling permission on a background thread or request with 0 permissions will throw `IllegalStateException`
 ##### Example:
 ```kotlin
 launch {
@@ -67,8 +67,8 @@ val permissionResult = coper.request(
 )
 permissionResult.isGranted() // returns false
 ```
-###### Note:
-If any of the requests fail, then request returns `PermissionsResult.Denied` with all denied permissions and its deny value (denied rationale or denied permanently). 
+> [!NOTE]
+> If any of the requests fail, then request returns `PermissionsResult.Denied` with all denied permissions and its deny value (denied rationale or denied permanently). 
 ##### Error handling:
 ```kotlin
 if (permissionResult.isDenied()) {
@@ -108,8 +108,8 @@ coper.withPermissions(Manifest.permission.CAMERA) {
     launchCamera()
 }
 ```
-###### Note:
-If permission will not be granted, then request crash with `PermissionsRequestFailedException`
+> [!NOTE]
+> If permission will not be granted, then request crash with `PermissionsRequestFailedException`
 ##### Additional functionality:
 ###### Request pending check:
 ```kotlin
