@@ -71,8 +71,8 @@ permissionResult.isGranted() // returns false
 If any of the requests fail, then request returns `PermissionsResult.Denied` with all denied permissions and its deny value (denied rationale or denied permanently). 
 ##### Error handling:
 ```kotlin
-if(permissionResult.isDenied()) {
-    if(permissionResult.isRationale()) {
+if (permissionResult.isDenied()) {
+    if (permissionResult.isRationale()) {
         showRationale(permissionResult.getDeniedRationale())
     } else {
         showPermanent(permissionResult.getDeniedPermanently())
