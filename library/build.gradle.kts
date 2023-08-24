@@ -18,8 +18,6 @@ android {
     buildTypes {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xopt-in=kotlin.contracts.ExperimentalContracts")
-            apiVersion = "1.5"
-            languageVersion = "1.5"
         }
     }
     buildFeatures {
