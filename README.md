@@ -9,10 +9,10 @@ Fragment lifecycle is covered by this library, so you should not worry about req
 It is designed to use in any place like ViewModel as in fragment or activity.
 
 ### Download
-```
+```groovy
 allprojects {
     repositories {
-        ...
+        // ...
         maven { url 'https://jitpack.io' }
     }
 }
@@ -23,24 +23,24 @@ dependencies {
 ```
 
 ### Api
-```
+```kotlin
 val coper: Coper = CoperBuilder()
     .setFragmentActivity(activity)
     .build()
 ```
-###### Note:
-You must provide fragment manager to build coper.
+> [!NOTE]
+> You must provide fragment manager to build coper.
 ### Usage
 ##### Request:
-```
+```kotlin
 launch {
     val permissionResult: PermissionResult = coper.request(Manifest.permission.CAMERA)
 }
 ```
-###### Note:
-Calling permission on a background thread or request with 0 permissions will throw `IllegalStateException`
+> [!NOTE]
+> Calling permission on a background thread or request with 0 permissions will throw `IllegalStateException`
 ##### Example:
-```
+```kotlin
 launch {
     val permissionResult = coper.request(Manifest.permission.CAMERA)
     if (permissionResult.isSuccessful()) {
@@ -51,7 +51,7 @@ launch {
 }
 ```
 ##### Support for multiple permissions request:
-```
+```kotlin
 val permissionResult = coper.request(
         Manifest.permission.CAMERA, // granted
         Manifest.permission.READ_EXTERNAL_STORAGE, // granted
@@ -59,7 +59,7 @@ val permissionResult = coper.request(
 )
 permissionResult.isGranted() // returns true
 ```
-```
+```kotlin
 val permissionResult = coper.request(
         Manifest.permission.CAMERA, // granted
         Manifest.permission.READ_EXTERNAL_STORAGE, // denied
@@ -67,12 +67,12 @@ val permissionResult = coper.request(
 )
 permissionResult.isGranted() // returns false
 ```
-###### Note:
-If any of the requests fail, then request returns `PermissionsResult.Denied` with all denied permissions and its deny value (denied rationale or denied permanently). 
+> [!NOTE]
+> If any of the requests fail, then request returns `PermissionsResult.Denied` with all denied permissions and its deny value (denied rationale or denied permanently). 
 ##### Error handling:
-```
-if(permissionResult.isDenied()) {
-    if(permissionResult.isRationale()) {
+```kotlin
+if (permissionResult.isDenied()) {
+    if (permissionResult.isRationale()) {
         showRationale(permissionResult.getDeniedRationale())
     } else {
         showPermanent(permissionResult.getDeniedPermanently())
@@ -80,7 +80,7 @@ if(permissionResult.isDenied()) {
 }
 ```
 ##### If you have some optional permissions:
-```
+```kotlin
 launch {
     if (coper.request(Manifest.permission.CAMERA).isSuccesfull()) {
         launchCamera()
@@ -92,7 +92,7 @@ launch {
 }
 ```
 ##### Permission result callbacks: 
-```
+```kotlin
 coper.request(
     Manifest.permission.ACCESS_FINE_LOCATION,
     Manifest.permission.CAMERA
@@ -103,24 +103,24 @@ coper.request(
 }
 ```
 ##### Execute body if all permissions enabled or throw error:
-```
+```kotlin
 coper.withPermissions(Manifest.permission.CAMERA) {
     launchCamera()
 }
 ```
-###### Note:
-If permission will not be granted, then request crash with `PermissionsRequestFailedException`
+> [!NOTE]
+> If permission will not be granted, then request crash with `PermissionsRequestFailedException`
 ##### Additional functionality:
 ###### Request pending check:
-```
+```kotlin
 coper.isRequestPendingSafe()
 ```
 ###### Granted permissions check:
-```
+```kotlin
 // Returns true if all permissions granted
 coper.isPermissionsGrantedSafe(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 ```
-### Cancelation
+### Cancellation
 If you cancel job, request will be left until user will submit, but client will not get response.
 ### State recreation
 Sometimes after application killed (for example temporally killing to preserve memory), the dialog could be still visible, but reference to request will be lost.

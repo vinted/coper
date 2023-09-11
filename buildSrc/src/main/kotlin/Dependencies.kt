@@ -1,13 +1,13 @@
 object Versions {
     const val APP_COMPAT = "1.1.0"
-    const val KOTLIN = "1.9.0"
+    const val KOTLIN = "1.8.22"
     const val COROUTINES = "1.7.3"
     const val ANDROID_GRADLE_PLUGIN = "7.4.2"
     const val JUNIT = "4.13.2"
     const val ROBOLECTRIC = "4.3"
     const val MOCKITO = "3.12.4"
     const val MOCKITO_KOTILN = "3.2.0"
-    const val CORE_KTX = "1.2.0"
+    const val CORE_KTX = "1.10.1"
     const val FRAGMENT_KTX = "1.6.1"
     const val DETEKT_RUNTIME = "1.23.1"
     const val LIFECYCLE = "2.2.0"
@@ -19,7 +19,7 @@ object Versions {
 
     private const val MAJOR = 0
     private const val MINOR = 6
-    private const val PATCH = 0
+    private const val PATCH = 3
 
     const val VERSION_NAME: String = "$MAJOR.$MINOR.$PATCH"
 }
