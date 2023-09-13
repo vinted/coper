@@ -23,6 +23,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.LooperMode
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -30,6 +31,7 @@ import kotlin.test.assertTrue
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
+@LooperMode(LooperMode.Mode.PAUSED)
 @Config(manifest = Config.NONE, sdk = [23, 27])
 class CoperImplTest {
 
@@ -39,7 +41,7 @@ class CoperImplTest {
 
     @Before
     fun setup() = runTest {
-        fixture.mockGetFragmentWithStub()
+        runIdlingMainThread { fixture.mockGetFragmentWithStub() }
         mockCheckPermissions("test", PackageManager.PERMISSION_GRANTED)
     }
 
@@ -415,7 +417,7 @@ class CoperImplTest {
         )
 
         val fragment = withTimeout(1000) {
-            fixture.getFragmentSafely()
+            runIdlingMainThread { fixture.getFragmentSafely() }
         }
 
         assertEquals(fragment, activity.supportFragmentManager.findFragmentByTag(FRAGMENT_TAG))
@@ -467,7 +469,7 @@ class CoperImplTest {
             lifecycle = activity.lifecycle,
         )
 
-        val fragment = fixture.getFragmentSafely()
+        val fragment = runIdlingMainThread { fixture.getFragmentSafely() }
 
         val job = async {
             fixture.request(permission)
@@ -486,7 +488,7 @@ class CoperImplTest {
             lifecycle = activity.lifecycle,
             fragmentManager = fragmentManager
         )
-        val fragment = fixture.getFragmentSafely()
+        val fragment = runIdlingMainThread { fixture.getFragmentSafely() }
         val permission = "onConfigurationChange"
         activity.setPermissionResult(permission, PackageManager.PERMISSION_DENIED)
 
@@ -853,5 +855,13 @@ class CoperImplTest {
         coperFragment.requireActivity().supportFragmentManager.beginTransaction()
             .add(spyCoperFragment, FRAGMENT_TAG)
             .commitNow()
+    }
+
+    private suspend fun <T> runIdlingMainThread(block: suspend () -> T): T {
+        return coroutineScope {
+            val asyncBlock = async { block() }
+            val asyncMainThreadIdle = async { shadowOf(getMainLooper()).idle() }
+            awaitAll(asyncBlock, asyncMainThreadIdle).first() as T
+        }
     }
 }
