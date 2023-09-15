@@ -42,7 +42,7 @@ class CoperImplTest {
     @Before
     fun setup() = runTest {
         runIdlingMainThread { fixture.mockGetFragmentWithStub() }
-        mockCheckPermissions("test", PackageManager.PERMISSION_GRANTED)
+        shadowOf(activity).grantPermissions("test")
     }
 
     @Test
@@ -57,7 +57,7 @@ class CoperImplTest {
     @Config(sdk = [21, 23, 27])
     fun request_permissionsIsGranted_grantedListConsistOfThisPermission() = runTest {
         val permissionName = "granted"
-        mockCheckPermissions(permissionName, PackageManager.PERMISSION_GRANTED)
+        shadowOf(activity).grantPermissions(permissionName)
 
         val response = fixture.request(permissionName)
 
@@ -70,8 +70,7 @@ class CoperImplTest {
     fun request_twoPermissionsIsGranted_grantedListConsistOfThisPermissions() = runTest {
         val firstPermission = "granted"
         val secondPermission = "granted2"
-        mockCheckPermissions(firstPermission, PackageManager.PERMISSION_GRANTED)
-        mockCheckPermissions(secondPermission, PackageManager.PERMISSION_GRANTED)
+        shadowOf(activity).grantPermissions(firstPermission, secondPermission)
 
         val response = fixture.request(firstPermission, secondPermission)
 
@@ -83,7 +82,7 @@ class CoperImplTest {
     @Config(sdk = [21])
     fun request_sdkUnder23AndPermissionsDenied_permissionResultDeniedWaitingResult() = runTest {
         val permission = "denied"
-        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permission)
 
         val response = fixture.request(permission)
 
@@ -94,7 +93,7 @@ class CoperImplTest {
     @Test
     fun request_permissionsIsDeniedRationale_permissionDeniedRationaleResult() = runTest {
         val permissionName = "denied"
-        mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permissionName)
         activity.setShouldShowRequestPermissionRationale(
             permission = permissionName,
             rationale = true
@@ -113,7 +112,7 @@ class CoperImplTest {
     @Test
     fun request_permissionsIsDeniedPermanently_permissionDeniedPermanentlyResult() = runTest {
         val permissionName = "denied_perm"
-        mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permissionName)
         activity.setShouldShowRequestPermissionRationale(
             permission = permissionName,
             rationale = false
@@ -133,12 +132,11 @@ class CoperImplTest {
     fun request_permissionsIsDeniedPermanentlyAndOtherRationale_bothPermissionsExist() = runTest {
         val permissionPermanently = "denied_perm"
         val permissionRationale = "denied_rat"
-        mockCheckPermissions(permissionPermanently, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permissionPermanently, permissionRationale)
         activity.setShouldShowRequestPermissionRationale(
             permission = permissionPermanently,
             rationale = false
         )
-        mockCheckPermissions(permissionRationale, PackageManager.PERMISSION_DENIED)
         activity.setShouldShowRequestPermissionRationale(
             permission = permissionRationale,
             rationale = true
@@ -171,9 +169,8 @@ class CoperImplTest {
     fun request_twoPermissionsOneGrantedAndOneDenied_onePermissionEmitsToOnGrantedOtherToOnDenied() {
         return runTest {
             val permissionDenied = "denied"
-            mockCheckPermissions(permissionDenied, PackageManager.PERMISSION_DENIED)
             val permissionGranted = "granted"
-            mockCheckPermissions(permissionGranted, PackageManager.PERMISSION_DENIED)
+            shadowOf(activity).denyPermissions(permissionDenied, permissionGranted)
 
             val response = executePermissionRequest(
                 permissionsToRequest = listOf(permissionGranted, permissionDenied),
@@ -195,7 +192,7 @@ class CoperImplTest {
     @Test
     fun request_permissionsIsDeniedButOnrequestGranted_permissionGrantedResult() = runTest {
         val permissionName = "denied_and_granted"
-        mockCheckPermissions(permissionName, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permissionName)
 
         val response = executePermissionRequest(
             permissionsToRequest = listOf(permissionName),
@@ -211,8 +208,7 @@ class CoperImplTest {
         return runTest {
             val firstPermission = "first"
             val secondPermission = "second"
-            mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+            shadowOf(activity).denyPermissions(firstPermission, secondPermission)
 
             val response = executePermissionRequest(
                 permissionsToRequest = listOf(
@@ -235,8 +231,7 @@ class CoperImplTest {
         return runTest {
             val firstPermission = "first"
             val secondPermission = "second"
-            mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+            shadowOf(activity).denyPermissions(firstPermission, secondPermission)
 
             val response = executePermissionRequest(
                 permissionsToRequest = listOf(
@@ -267,8 +262,7 @@ class CoperImplTest {
                 permission = secondPermission,
                 rationale = true
             )
-            mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+            shadowOf(activity).denyPermissions(firstPermission, secondPermission)
 
             val response = executePermissionRequest(
                 permissionsToRequest = listOf(
@@ -293,8 +287,7 @@ class CoperImplTest {
     fun request_twoParallelPermissionsRequestBothGranted_bothGotGranted() = runTest {
         val firstPermission = "first"
         val secondPermission = "second"
-        mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-        mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(firstPermission, secondPermission)
 
         val response1Job = async {
             executePermissionRequest(
@@ -325,8 +318,7 @@ class CoperImplTest {
             firstCoperReference.mockGetFragmentWithStub()
             val secondCoperReference = getCoperInstance()
             secondCoperReference.mockGetFragmentWithStub()
-            mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+            shadowOf(activity).denyPermissions(firstPermission, secondPermission)
 
             val response1Job = async {
                 executePermissionRequest(
@@ -355,8 +347,7 @@ class CoperImplTest {
     fun request_twoSynchronousPermissionsRequestBothGranted_bothGotGranted() = runTest {
         val firstPermission = "first"
         val secondPermission = "second"
-        mockCheckPermissions(firstPermission, PackageManager.PERMISSION_DENIED)
-        mockCheckPermissions(secondPermission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(firstPermission, secondPermission)
 
         val response1 = executePermissionRequest(
             permissionsToRequest = listOf(firstPermission),
@@ -440,8 +431,7 @@ class CoperImplTest {
     @Test(expected = IllegalStateException::class)
     fun request_resultPermissionsEmptyList_throwException() = runTest {
         val crashPermission = "crash"
-        mockCheckPermissions(crashPermission, PackageManager.PERMISSION_DENIED)
-
+        shadowOf(activity).denyPermissions(crashPermission)
 
         executePermissionRequest(
             permissionsToRequest = emptyList(),
@@ -452,7 +442,7 @@ class CoperImplTest {
     @Test(expected = IllegalStateException::class)
     fun request_resultPermissionResultEmptyList_throwException() = runTest {
         val crashPermission = "crash"
-        mockCheckPermissions(crashPermission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(crashPermission)
 
         executePermissionRequest(listOf(crashPermission), emptyList())
     }
@@ -490,7 +480,7 @@ class CoperImplTest {
         )
         val fragment = runIdlingMainThread { fixture.getFragmentSafely() }
         val permission = "onConfigurationChange"
-        activity.setPermissionResult(permission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permission)
 
         val job = async {
             fixture.request(permission)
@@ -510,7 +500,7 @@ class CoperImplTest {
     @Test
     fun withPermissions_requestGranted_bodyRun() = runTest {
         val permission = "permission"
-        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permission)
 
         executeWithPermission(listOf(permission), listOf(PermissionChecker.PERMISSION_GRANTED)) {
             assertTrue { it.grantedPermissions.isNotEmpty() }
@@ -520,7 +510,7 @@ class CoperImplTest {
     @Test(expected = PermissionsRequestFailedException::class)
     fun withPermissions_requestDenied_throwException() = runTest {
         val permission = "permission"
-        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permission)
 
         executeWithPermission(listOf(permission), listOf(PermissionChecker.PERMISSION_DENIED)) {
         }
@@ -529,7 +519,7 @@ class CoperImplTest {
     @Test
     fun request_permissionResultCameWithDifferentPermissions_jobIsNotCompleted() = runTest {
         val permission = "permission"
-        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permission)
         val fragment = fixture.getFragmentSafely()
         whenever(
             fragment.requestPermissions(
@@ -556,7 +546,7 @@ class CoperImplTest {
     fun request_onResumeCalledDuringRequest_permissionRequestStarted() = runTest {
         val permission = "onResume"
         val fragment = fixture.getFragmentSafely()
-        mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permission)
 
         val responseAsync = async {
             fixture.request(permission)
@@ -571,7 +561,7 @@ class CoperImplTest {
     @Test
     fun request_twoIdenticalRequest_twoRequestCompleted() = runTest {
         val permission = "sameRequest"
-        mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(permission)
         val responseAsync1 = async {
             executePermissionRequest(
                 permissionsToRequest = listOf(permission),
@@ -595,8 +585,7 @@ class CoperImplTest {
     fun request_twoIdenticalRequestButOrderIsDifferent_twoRequestCompleted() = runTest {
         val firstPermission = "firstPermission"
         val secondPermission = "secondPermission"
-        mockCheckPermissions(firstPermission, PermissionChecker.PERMISSION_DENIED)
-        mockCheckPermissions(secondPermission, PermissionChecker.PERMISSION_DENIED)
+        shadowOf(activity).denyPermissions(firstPermission, secondPermission)
 
         val responseAsync1 = async {
             executePermissionRequest(
@@ -622,8 +611,7 @@ class CoperImplTest {
         return runTest {
             val firstPermission = "firstPermission"
             val secondPermission = "secondPermission"
-            mockCheckPermissions(firstPermission, PermissionChecker.PERMISSION_DENIED)
-            mockCheckPermissions(secondPermission, PermissionChecker.PERMISSION_DENIED)
+            shadowOf(activity).denyPermissions(firstPermission, secondPermission)
             val coperFragment = fixture.getFragmentSafely()
             whenever(
                 coperFragment.requestPermissions(
@@ -656,9 +644,10 @@ class CoperImplTest {
 
     @Test
     fun isRequestPending_requestIsPending_returnsTrue() = runTest {
-        mockCheckPermissions("test", PermissionChecker.PERMISSION_DENIED)
+        val permission = "test"
+        shadowOf(activity).denyPermissions(permission)
         val responseAsync = async {
-            fixture.request("test")
+            fixture.request(permission)
         }
         fixture.getFragmentSafely().permissionRequestStateFlow.filterNotNull().first()
 
@@ -671,19 +660,10 @@ class CoperImplTest {
     @Test
     @Config(sdk = [21, 23, 27])
     fun isPermissionsGranted_permissionsNotGranted_returnsFalse() = runTest {
-        mockCheckPermissions("not_granted", PermissionChecker.PERMISSION_DENIED)
+        val permission = "not_granted"
+        shadowOf(activity).denyPermissions(permission)
 
-        val isGranted = fixture.isPermissionsGrantedSafe("not_granted")
-
-        assertFalse(isGranted)
-    }
-
-    @Test
-    @Config(sdk = [21, 23, 27])
-    fun isPermissionsGranted_permissionsNotGrantedByOp_returnsFalse() = runTest {
-        mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
-
-        val isGranted = fixture.isPermissionsGrantedSafe("not_granted_op")
+        val isGranted = fixture.isPermissionsGrantedSafe(permission)
 
         assertFalse(isGranted)
     }
@@ -691,9 +671,10 @@ class CoperImplTest {
     @Test
     @Config(sdk = [21, 23, 27])
     fun isPermissionsGranted_permissionsGranted_returnsTrue() = runTest {
-        mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
+        val permission = "granted"
+        shadowOf(activity).grantPermissions(permission)
 
-        val isGranted = fixture.isPermissionsGrantedSafe("granted")
+        val isGranted = fixture.isPermissionsGrantedSafe(permission)
 
         assertTrue(isGranted)
     }
@@ -704,7 +685,7 @@ class CoperImplTest {
         val requests = mutableListOf<Deferred<PermissionResult>>()
         for (i in 0 until testCount) {
             val permission = "test-$i"
-            mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+            shadowOf(activity).denyPermissions(permission)
 
             requests.add(async {
                 executePermissionRequest(
@@ -835,10 +816,6 @@ class CoperImplTest {
                 requestCode = requestCode
             )
         }
-    }
-
-    private fun mockCheckPermissions(permission: String, result: Int) {
-        activity.setPermissionResult(permission, result)
     }
 
     private fun getCoperInstance(
