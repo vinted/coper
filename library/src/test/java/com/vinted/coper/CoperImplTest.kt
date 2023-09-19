@@ -46,7 +46,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_responseIsSuccessful() = runTest {
         val response = fixture.request("test")
 
@@ -54,7 +54,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_permissionsIsGranted_grantedListConsistOfThisPermission() = runTest {
         val permissionName = "granted"
         mockCheckPermissions(permissionName, PackageManager.PERMISSION_GRANTED)
@@ -66,7 +66,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_twoPermissionsIsGranted_grantedListConsistOfThisPermissions() = runTest {
         val firstPermission = "granted"
         val secondPermission = "granted2"
@@ -77,18 +77,6 @@ class CoperImplTest {
 
         assertTrue(response is PermissionResult.Granted)
         assertEquals(listOf(firstPermission, secondPermission), response.grantedPermissions)
-    }
-
-    @Test
-    @Config(sdk = [21])
-    fun request_sdkUnder23AndPermissionsDenied_permissionResultDeniedWaitingResult() = runTest {
-        val permission = "denied"
-        mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
-
-        val response = fixture.request(permission)
-
-        assertTrue(response.isDenied())
-        assertEquals(listOf(permission), response.getAllDeniedPermissions())
     }
 
     @Test
@@ -669,7 +657,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun isPermissionsGranted_permissionsNotGranted_returnsFalse() = runTest {
         mockCheckPermissions("not_granted", PermissionChecker.PERMISSION_DENIED)
 
@@ -679,7 +667,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun isPermissionsGranted_permissionsNotGrantedByOp_returnsFalse() = runTest {
         mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
 
@@ -689,7 +677,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun isPermissionsGranted_permissionsGranted_returnsTrue() = runTest {
         mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
 
@@ -738,7 +726,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_runOnPausingDispatcher_responseIsSuccessful() = runTest {
         val isCancelled = fixture.getFragmentSafely().lifecycleScope.launchWhenCreated {
             fixture.request("test")
