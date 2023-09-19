@@ -8,7 +8,7 @@ object Versions {
     const val MOCKITO = "4.11.0"
     const val MOCKITO_KOTLIN = "4.1.0"
     const val CORE_KTX = "1.10.1"
-    const val FRAGMENT_KTX = "1.2.4"
+    const val FRAGMENT_KTX = "1.6.1"
     const val DETEKT_RUNTIME = "1.23.1"
     const val LIFECYCLE = "2.2.0"
     const val VIEW_BINDING_DELEGATE = "1.5.9"
