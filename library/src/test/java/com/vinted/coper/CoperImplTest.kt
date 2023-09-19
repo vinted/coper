@@ -46,7 +46,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_responseIsSuccessful() = runTest {
         val response = fixture.request("test")
 
@@ -54,7 +54,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_permissionsIsGranted_grantedListConsistOfThisPermission() = runTest {
         val permissionName = "granted"
         shadowOf(activity).grantPermissions(permissionName)
@@ -66,7 +66,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_twoPermissionsIsGranted_grantedListConsistOfThisPermissions() = runTest {
         val firstPermission = "granted"
         val secondPermission = "granted2"
@@ -76,18 +76,6 @@ class CoperImplTest {
 
         assertTrue(response is PermissionResult.Granted)
         assertEquals(listOf(firstPermission, secondPermission), response.grantedPermissions)
-    }
-
-    @Test
-    @Config(sdk = [21])
-    fun request_sdkUnder23AndPermissionsDenied_permissionResultDeniedWaitingResult() = runTest {
-        val permission = "denied"
-        shadowOf(activity).denyPermissions(permission)
-
-        val response = fixture.request(permission)
-
-        assertTrue(response.isDenied())
-        assertEquals(listOf(permission), response.getAllDeniedPermissions())
     }
 
     @Test
@@ -658,7 +646,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun isPermissionsGranted_permissionsNotGranted_returnsFalse() = runTest {
         val permission = "not_granted"
         shadowOf(activity).denyPermissions(permission)
@@ -669,7 +657,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun isPermissionsGranted_permissionsGranted_returnsTrue() = runTest {
         val permission = "granted"
         shadowOf(activity).grantPermissions(permission)
@@ -719,7 +707,7 @@ class CoperImplTest {
     }
 
     @Test
-    @Config(sdk = [21, 23, 27])
+    @Config(sdk = [23, 27])
     fun request_runOnPausingDispatcher_responseIsSuccessful() = runTest {
         val isCancelled = fixture.getFragmentSafely().lifecycleScope.launchWhenCreated {
             fixture.request("test")

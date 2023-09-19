@@ -1,6 +1,5 @@
 package com.vinted.coper
 
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -101,7 +100,7 @@ internal class CoperFragment : Fragment() {
                 getDeniedPermissionsResult(denied)
             } else {
                 getPermissionsResult(
-                    permissionChecks = requestPermissionsByVersion(denied.toTypedArray()),
+                    permissionChecks = requestPermissionsAsync(denied.toTypedArray()).await(),
                     grantedPermissions = granted,
                     isSecondTime = true
                 )
@@ -120,21 +119,6 @@ internal class CoperFragment : Fragment() {
             }
         }
         return PermissionResult.Denied(deniedPermissions)
-    }
-
-    // On devices with lower sdk than 23, there is no requesting permissions.
-    private suspend fun requestPermissionsByVersion(
-        permissions: Array<out String>
-    ): List<PermissionCheckResult> {
-        return if (isDeviceSdkAtLeastMarshmallow()) {
-            requestPermissionsAsync(permissions).await()
-        } else {
-            permissions.map { PermissionCheckResult.Denied(it) }
-        }
-    }
-
-    private fun isDeviceSdkAtLeastMarshmallow(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
     }
 
     private fun requestPermissionsAsync(
@@ -237,13 +221,7 @@ internal class CoperFragment : Fragment() {
             fun of(permissionResult: Int, permission: String): PermissionCheckResult {
                 return when (permissionResult) {
                     PermissionChecker.PERMISSION_GRANTED -> Granted(permission)
-                    PermissionChecker.PERMISSION_DENIED,
-                    PermissionChecker.PERMISSION_DENIED_APP_OP -> Denied(permission)
-                    else -> {
-                        val message = "Not expected permission result: $permissionResult " +
-                                "for $permission"
-                        throw IllegalStateException(message)
-                    }
+                    else -> Denied(permission)
                 }
             }
         }

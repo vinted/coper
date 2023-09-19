@@ -5,8 +5,8 @@ object Versions {
     const val ANDROID_GRADLE_PLUGIN = "7.4.2"
     const val JUNIT = "4.13.2"
     const val ROBOLECTRIC = "4.3"
-    const val MOCKITO = "3.12.4"
-    const val MOCKITO_KOTILN = "3.2.0"
+    const val MOCKITO = "4.11.0"
+    const val MOCKITO_KOTLIN = "4.1.0"
     const val CORE_KTX = "1.10.1"
     const val FRAGMENT_KTX = "1.2.4"
     const val DETEKT_RUNTIME = "1.23.1"
@@ -15,7 +15,7 @@ object Versions {
 
     const val COMPILE_SDK_VERSION = 33
     const val TARGET_SDK_VERSION = 33
-    const val MIN_SDK_VERSION = 21
+    const val MIN_SDK_VERSION = 23
 
     private const val MAJOR = 0
     private const val MINOR = 6
@@ -34,7 +34,7 @@ object Libs {
     const val JUNIT = "junit:junit:${Versions.JUNIT}"
     const val ROBOLECTRIC = "org.robolectric:robolectric:${Versions.ROBOLECTRIC}"
     const val MOCKITO = "org.mockito:mockito-core:${Versions.MOCKITO}"
-    const val MOCKITO_KOTLIN = "org.mockito.kotlin:mockito-kotlin:${Versions.MOCKITO_KOTILN}"
+    const val MOCKITO_KOTLIN = "org.mockito.kotlin:mockito-kotlin:${Versions.MOCKITO_KOTLIN}"
     const val CORE_KTX = "androidx.core:core-ktx:${Versions.CORE_KTX}"
     const val KOTLIN_TESTS = "org.jetbrains.kotlin:kotlin-test:${Versions.KOTLIN}"
     const val FRAGMENT_KTX = "androidx.fragment:fragment-ktx:${Versions.FRAGMENT_KTX}"
