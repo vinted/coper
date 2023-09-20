@@ -5,12 +5,14 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
 
@@ -79,9 +81,11 @@ internal class CoperImpl(
     }
 
     internal suspend fun getFragmentSafely(): CoperFragment {
-        val fragment = getAttachedFragment()
-        fragment.lifecycle.waitOnCreate()
-        return fragment
+        return withContext(Dispatchers.Main) {
+            val fragment = getAttachedFragment()
+            fragment.lifecycle.waitOnCreate()
+            fragment
+        }
     }
 
     private suspend fun getAttachedFragment(): CoperFragment {
