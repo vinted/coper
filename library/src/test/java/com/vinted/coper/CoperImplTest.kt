@@ -599,8 +599,8 @@ class CoperImplTest {
             val coperFragment = fixture.getFragmentSafely()
             whenever(
                 coperFragment.requestPermissions(
-                    eq(arrayOf(firstPermission, secondPermission)),
-                    anyOrNull()
+                    arrayOf(firstPermission, secondPermission),
+                    CoperFragment.REQUEST_CODE
                 )
             ).then {
                 coperFragment.onRequestPermissionResult(
