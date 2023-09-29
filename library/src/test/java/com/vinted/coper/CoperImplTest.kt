@@ -430,11 +430,7 @@ class CoperImplTest {
         val crashPermission = "crash"
         mockCheckPermissions(crashPermission, PackageManager.PERMISSION_DENIED)
 
-
-        executePermissionRequest(
-            permissionsToRequest = emptyList(),
-            permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-        )
+        fixture.request(*emptyList<String>().toTypedArray())
     }
 
     @Test(expected = IllegalStateException::class)
