@@ -11,6 +11,15 @@ group = "com.github.vinted"
 android {
     compileSdk = Versions.COMPILE_SDK_VERSION
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+
     defaultConfig {
         minSdk = Versions.MIN_SDK_VERSION
     }
