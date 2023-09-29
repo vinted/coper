@@ -4,7 +4,7 @@ object Versions {
     const val COROUTINES = "1.7.3"
     const val ANDROID_GRADLE_PLUGIN = "7.4.2"
     const val JUNIT = "4.13.2"
-    const val ROBOLECTRIC = "4.3"
+    const val ROBOLECTRIC = "4.10.3"
     const val MOCKITO = "4.11.0"
     const val MOCKITO_KOTLIN = "4.1.0"
     const val CORE_KTX = "1.6.0"

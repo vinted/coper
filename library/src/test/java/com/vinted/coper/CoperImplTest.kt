@@ -430,11 +430,7 @@ class CoperImplTest {
         val crashPermission = "crash"
         mockCheckPermissions(crashPermission, PackageManager.PERMISSION_DENIED)
 
-
-        executePermissionRequest(
-            permissionsToRequest = emptyList(),
-            permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-        )
+        fixture.request(*emptyList<String>().toTypedArray())
     }
 
     @Test(expected = IllegalStateException::class)
@@ -518,19 +514,6 @@ class CoperImplTest {
     fun request_permissionResultCameWithDifferentPermissions_jobIsNotCompleted() = runTest {
         val permission = "permission"
         mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
-        val fragment = fixture.getFragmentSafely()
-        whenever(
-            fragment.requestPermissions(
-                eq(listOf(permission).toTypedArray()),
-                anyOrNull()
-            )
-        ).then {
-            fragment.onRequestPermissionResult(
-                permissions = listOf("test"),
-                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED),
-                requestCode = CoperFragment.REQUEST_CODE
-            )
-        }
 
         val responseAsync = async {
             fixture.request(permission)
@@ -560,17 +543,18 @@ class CoperImplTest {
     fun request_twoIdenticalRequest_twoRequestCompleted() = runTest {
         val permission = "sameRequest"
         mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+
+        stubRequestPermission(
+            coperFragment = fixture.getFragmentSafely(),
+            permissions = listOf(permission),
+            permissionResults = listOf(PermissionChecker.PERMISSION_GRANTED),
+        )
+
         val responseAsync1 = async {
-            executePermissionRequest(
-                permissionsToRequest = listOf(permission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-            )
+            fixture.request(*listOf(permission).toTypedArray())
         }
         val responseAsync2 = async {
-            executePermissionRequest(
-                permissionsToRequest = listOf(permission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-            )
+            fixture.request(*listOf(permission).toTypedArray())
         }
         val result2 = responseAsync2.await()
         val result1 = responseAsync1.await()
@@ -615,8 +599,8 @@ class CoperImplTest {
             val coperFragment = fixture.getFragmentSafely()
             whenever(
                 coperFragment.requestPermissions(
-                    eq(arrayOf(firstPermission, secondPermission)),
-                    anyOrNull()
+                    arrayOf(firstPermission, secondPermission),
+                    CoperFragment.REQUEST_CODE
                 )
             ).then {
                 coperFragment.onRequestPermissionResult(
@@ -760,11 +744,35 @@ class CoperImplTest {
     fun request_requestCodeIsNotOfCoperFragment_throwException() = runTest {
         val requestedPermission = "requested_permission"
 
-        executePermissionRequest(
-            permissionsToRequest = listOf(requestedPermission),
-            permissionResult = listOf(PermissionChecker.PERMISSION_DENIED),
-            requestCode = 0
-        )
+        val coperFragment = fixture.getFragmentSafely()
+
+        whenever(
+            coperFragment.requestPermissions(
+                listOf(requestedPermission).toTypedArray(),
+                0,
+            )
+        ).then {
+            coperFragment.onRequestPermissionResult(
+                permissions = listOf(requestedPermission),
+                permissionsResult = listOf(PermissionChecker.PERMISSION_DENIED),
+                requestCode = 0,
+            )
+        }
+
+        whenever(
+            coperFragment.requestPermissions(
+                listOf(requestedPermission).toTypedArray(),
+                CoperFragment.REQUEST_CODE
+            )
+        ).then {
+            coperFragment.onRequestPermissionResult(
+                permissions = listOf(requestedPermission),
+                permissionsResult = listOf(PermissionChecker.PERMISSION_DENIED),
+                requestCode = 0,
+            )
+        }
+
+        fixture.request(*listOf(requestedPermission).toTypedArray())
     }
 
     private suspend fun executePermissionRequest(
@@ -813,8 +821,8 @@ class CoperImplTest {
     ) {
         whenever(
             coperFragment.requestPermissions(
-                eq(permissions.toTypedArray()),
-                anyOrNull()
+                permissions.toTypedArray(),
+                requestCode,
             )
         ).then {
             coperFragment.onRequestPermissionResult(
