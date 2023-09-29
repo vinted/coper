@@ -543,17 +543,18 @@ class CoperImplTest {
     fun request_twoIdenticalRequest_twoRequestCompleted() = runTest {
         val permission = "sameRequest"
         mockCheckPermissions(permission, PermissionChecker.PERMISSION_DENIED)
+
+        stubRequestPermission(
+            coperFragment = fixture.getFragmentSafely(),
+            permissions = listOf(permission),
+            permissionResults = listOf(PermissionChecker.PERMISSION_GRANTED),
+        )
+
         val responseAsync1 = async {
-            executePermissionRequest(
-                permissionsToRequest = listOf(permission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-            )
+            fixture.request(*listOf(permission).toTypedArray())
         }
         val responseAsync2 = async {
-            executePermissionRequest(
-                permissionsToRequest = listOf(permission),
-                permissionResult = listOf(PermissionChecker.PERMISSION_GRANTED)
-            )
+            fixture.request(*listOf(permission).toTypedArray())
         }
         val result2 = responseAsync2.await()
         val result1 = responseAsync1.await()
