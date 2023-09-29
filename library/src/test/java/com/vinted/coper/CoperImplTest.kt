@@ -744,11 +744,35 @@ class CoperImplTest {
     fun request_requestCodeIsNotOfCoperFragment_throwException() = runTest {
         val requestedPermission = "requested_permission"
 
-        executePermissionRequest(
-            permissionsToRequest = listOf(requestedPermission),
-            permissionResult = listOf(PermissionChecker.PERMISSION_DENIED),
-            requestCode = 0
-        )
+        val coperFragment = fixture.getFragmentSafely()
+
+        whenever(
+            coperFragment.requestPermissions(
+                listOf(requestedPermission).toTypedArray(),
+                0,
+            )
+        ).then {
+            coperFragment.onRequestPermissionResult(
+                permissions = listOf(requestedPermission),
+                permissionsResult = listOf(PermissionChecker.PERMISSION_DENIED),
+                requestCode = 0,
+            )
+        }
+
+        whenever(
+            coperFragment.requestPermissions(
+                listOf(requestedPermission).toTypedArray(),
+                CoperFragment.REQUEST_CODE
+            )
+        ).then {
+            coperFragment.onRequestPermissionResult(
+                permissions = listOf(requestedPermission),
+                permissionsResult = listOf(PermissionChecker.PERMISSION_DENIED),
+                requestCode = 0,
+            )
+        }
+
+        fixture.request(*listOf(requestedPermission).toTypedArray())
     }
 
     private suspend fun executePermissionRequest(
