@@ -7,7 +7,7 @@ object Versions {
     const val ROBOLECTRIC = "4.10.3"
     const val MOCKITO = "5.5.0"
     const val MOCKITO_INLINE = "5.2.0"
-    const val MOCKITO_KOTLIN = "4.1.0"
+    const val MOCKITO_KOTLIN = "5.1.0"
     const val CORE_KTX = "1.6.0"
     const val FRAGMENT_KTX = "1.2.4"
     const val DETEKT_RUNTIME = "1.23.1"
