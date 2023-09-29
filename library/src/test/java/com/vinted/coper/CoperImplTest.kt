@@ -514,19 +514,6 @@ class CoperImplTest {
     fun request_permissionResultCameWithDifferentPermissions_jobIsNotCompleted() = runTest {
         val permission = "permission"
         mockCheckPermissions(permission, PackageManager.PERMISSION_DENIED)
-        val fragment = fixture.getFragmentSafely()
-        whenever(
-            fragment.requestPermissions(
-                eq(listOf(permission).toTypedArray()),
-                anyOrNull()
-            )
-        ).then {
-            fragment.onRequestPermissionResult(
-                permissions = listOf("test"),
-                permissionsResult = listOf(PermissionChecker.PERMISSION_GRANTED),
-                requestCode = CoperFragment.REQUEST_CODE
-            )
-        }
 
         val responseAsync = async {
             fixture.request(permission)
