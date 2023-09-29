@@ -16,6 +16,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
+import org.mockito.internal.util.MockUtil
 import org.mockito.kotlin.anyArray
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.whenever
@@ -846,6 +847,8 @@ class CoperImplTest {
 
     private suspend fun CoperImpl.mockGetFragmentWithStub() {
         val coperFragment = getFragmentSafely()
+        if (MockUtil.isMock(coperFragment)) return
+
         val spyCoperFragment = spy(coperFragment)
         // This is needed because spy creates new instance and stubbing needs exact reference
         coperFragment.requireActivity().supportFragmentManager.beginTransaction()
