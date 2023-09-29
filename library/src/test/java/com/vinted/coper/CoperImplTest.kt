@@ -813,8 +813,8 @@ class CoperImplTest {
     ) {
         whenever(
             coperFragment.requestPermissions(
-                eq(permissions.toTypedArray()),
-                anyOrNull()
+                permissions.toTypedArray(),
+                requestCode,
             )
         ).then {
             coperFragment.onRequestPermissionResult(
