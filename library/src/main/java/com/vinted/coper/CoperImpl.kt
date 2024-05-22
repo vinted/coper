@@ -106,13 +106,17 @@ internal class CoperImpl(
         fragmentManager: FragmentManager
     ): CoperFragment {
         return suspendCancellableCoroutine { continuation ->
-            fragmentManager.beginTransaction()
-                .add(this, FRAGMENT_TAG)
-                .runOnCommit {
-                    continuation.resume(this)
-                }
-                .commit()
-            _latestCommittedFragmentFlow.value = this
+            if (!fragmentManager.isStateSaved) {
+                fragmentManager.beginTransaction()
+                    .add(this, FRAGMENT_TAG)
+                    .runOnCommit {
+                        continuation.resume(this)
+                    }
+                    .commit()
+                _latestCommittedFragmentFlow.value = this
+            } else {
+                continuation.cancel()
+            }
         }
     }
 
