@@ -1,6 +1,7 @@
 package com.vinted.coper
 
 import android.content.pm.PackageManager
+import android.os.Bundle
 import android.os.Looper.getMainLooper
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.FragmentActivity
@@ -398,7 +399,7 @@ class CoperImplTest {
     @Test
     fun getFragment_lifecycleAlreadyAfterCreated_fragmentTransactionMade() = runTest {
         val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
-        val activity = activityController.setup().pause().get()
+        val activity = activityController.setup().resume().get()
         val fixture = getCoperInstance(
             lifecycle = activity.lifecycle,
             fragmentManager = activity.supportFragmentManager
@@ -409,6 +410,18 @@ class CoperImplTest {
         }
 
         assertEquals(fragment, activity.supportFragmentManager.findFragmentByTag(FRAGMENT_TAG))
+    }
+
+    @Test(expected = CancellationException::class)
+    fun getFragment_lifecycleAlreadyStateSaved_throwCancellationException() = runTest {
+        val activityController = Robolectric.buildActivity(FragmentActivity::class.java)
+        val activity = activityController.setup().saveInstanceState(Bundle()).get()
+        val fixture = getCoperInstance(
+            lifecycle = activity.lifecycle,
+            fragmentManager = activity.supportFragmentManager
+        )
+
+        runIdlingMainThread { fixture.getFragmentSafely() }
     }
 
     @Test
