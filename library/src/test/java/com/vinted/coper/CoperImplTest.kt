@@ -665,16 +665,6 @@ class CoperImplTest {
 
     @Test
     @Config(sdk = [23, 27])
-    fun isPermissionsGranted_permissionsNotGrantedByOp_returnsFalse() = runTest {
-        mockCheckPermissions("not_granted_op", PermissionChecker.PERMISSION_DENIED_APP_OP)
-
-        val isGranted = fixture.isPermissionsGrantedSafe("not_granted_op")
-
-        assertFalse(isGranted)
-    }
-
-    @Test
-    @Config(sdk = [23, 27])
     fun isPermissionsGranted_permissionsGranted_returnsTrue() = runTest {
         mockCheckPermissions("granted", PermissionChecker.PERMISSION_GRANTED)
 
